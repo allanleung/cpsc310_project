@@ -22,11 +22,11 @@ export default class InsightFacade implements IInsightFacade {
             })
             .then((data) => {
                 let statusCode = 204;
-                if (dataSet.has(id)) {
+                if (this.dataSet.has(id)) {
                     statusCode = 201
                 }
 
-                dataSet.set(id, JSON.parse(data));
+                this.dataSet.set(id, JSON.parse(data));
 
                 resolve({
                     code: statusCode,
