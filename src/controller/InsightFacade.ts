@@ -45,7 +45,23 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     removeDataset(id: string): Promise<InsightResponse> {
-        return null;
+        return new Promise((fulfill, reject) => {
+            if (!this.dataSet.has(id)) {
+                reject({
+                    code: 404,
+                    body: {
+                        error: "Resource not found"
+                    }
+                });
+            }
+
+            this.dataSet.delete(id);
+
+            fulfill({
+                code: 200,
+                body: {}
+            });
+        });
     }
 
     performQuery(query: QueryRequest): Promise <InsightResponse> {
