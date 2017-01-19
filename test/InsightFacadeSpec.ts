@@ -19,7 +19,7 @@ describe("InsightFacade.removeDataset", () => {
 
     it('should remove an existing ID successfully', () => {
         insightFacade.removeDataset("VISA110").then((response) => {
-            expect(response).to.eq({
+            expect(response).to.deep.eq({
                 code: 200,
                 body: {}
             });
