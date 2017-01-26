@@ -5,7 +5,6 @@
 import InsightFacade from "../src/controller/InsightFacade";
 var rp = require('request-promise-native');
 import {expect} from 'chai';
-import * as mocha from 'mocha';
 
 describe("InsightFacade.addDataset", () => {
     var insightFacade: InsightFacade = null;

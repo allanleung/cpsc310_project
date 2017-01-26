@@ -3,7 +3,6 @@
  */
 import {IInsightFacade, InsightResponse, QueryRequest} from "./IInsightFacade";
 import * as JSZip from 'jszip' ;
-import util = require('util');
 
 import Log from "../Util";
 
