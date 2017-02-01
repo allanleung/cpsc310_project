@@ -3,11 +3,11 @@
 */
 
 import InsightFacade from "../src/controller/InsightFacade";
-var rp = require('request-promise-native');
+const rp = require('request-promise-native');
 import {expect} from 'chai';
 
 describe("InsightFacade.addDataset", () => {
-    var insightFacade: InsightFacade = null;
+    let insightFacade: InsightFacade = null;
     let content: string;
 
     before(() => {
