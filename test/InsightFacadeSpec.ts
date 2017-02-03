@@ -87,7 +87,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade();
-        insightFacade.dataSet.set("courses/VISA110", {});
+        insightFacade.dataSet.set("courses/VISA110", []);
     });
 
     afterEach(() => {

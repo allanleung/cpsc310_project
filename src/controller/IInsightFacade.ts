@@ -9,9 +9,19 @@ export interface InsightResponse {
     body: {}; // the actual response
 }
 
+export interface QueryOptions {
+    COLUMNS: string[];
+    ORDER: string;
+    FORM: string;
+}
+
 export interface QueryRequest {
+    WHERE: any;
+    OPTIONS: QueryOptions;
     // you can define your own structure that complies with the EBNF here
 }
+
+
 
 export interface IInsightFacade {
 
