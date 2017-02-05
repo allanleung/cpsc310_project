@@ -110,21 +110,29 @@ describe("InsightFacade.performQuery", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade();
-        insightFacade.dataSet.set("dataset1", [
-            // this is the part i dontk now what dataset1 is...
-            // i want to
+        insightFacade.dataSet.set("ASIA325", [
             {
-                courses_dept: "Econ",
-                courses_id: 1,
-                courses_avg:50,
-                courses_instructor: "kevin",
-                courses_title: "Baby Econ",
-                courses_pass: 100,
-                courses_fail: 200,
-                courses_audit: 300,
-                courses_uuid: "999",
-            }
-        ]);
+                courses_title: "hong kong cinema",
+                courses_uuid: 39426,
+                courses_instructor: "bailey, c. d. alison",
+                courses_audit: 1,
+                courses_id: "325",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 71.18,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "hong kong cinema",
+                courses_uuid: 39427,
+                courses_instructor: "",
+                courses_audit: 1,
+                courses_id: "325",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 71.18,
+                courses_dept: "asia"
+            }]);
     });
     afterEach(() => {
         insightFacade = null;

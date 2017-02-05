@@ -93,12 +93,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     compareQuery(query: QueryRequest, oneItem: any) : boolean {
-        if (this.innerQueryLoop(query.WHERE, oneItem)) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return this.innerQueryLoop(query.WHERE, oneItem);
     }
 
     innerQueryLoop(query: any, oneItem: any) : boolean {
