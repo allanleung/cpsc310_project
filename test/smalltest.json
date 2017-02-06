@@ -1,0 +1,35 @@
+[
+  {
+    "courses_dept": "ECON",
+    "courses_id": 123,
+    "courses_avg": 50,
+    "courses_instructor": "Allan",
+    "courses_title": "Newbie Econ",
+    "courses_pass": 100,
+    "courses_fail": 100,
+    "courses_audit": 1,
+    "courses_uuid": "001"
+  },
+  {
+    "courses_dept": "CPSC",
+    "courses_id": 456,
+    "courses_avg": 60,
+    "courses_instructor": "Bob",
+    "courses_title": "Pro Comp Sci",
+    "courses_pass": 5,
+    "courses_fail": 100,
+    "courses_audit": 100,
+    "courses_uuid": "011"
+  },
+  {
+  "courses_dept": "COMM",
+  "courses_id": 789,
+  "courses_avg": 70,
+  "courses_instructor": "Cocaine",
+  "courses_title": "Newbie Business",
+  "courses_pass": 76,
+  "courses_fail": 39,
+  "courses_audit": 8,
+  "courses_uuid": "111"
+  }
+]
