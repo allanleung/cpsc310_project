@@ -31,15 +31,6 @@ export default class InsightFacade implements IInsightFacade {
         return new Promise<InsightResponse>((resolve, reject) => {
             new JSZip().loadAsync(content)
                 .then(zip => {
-                    // find all matching files
-                    const files = zip.file(new RegExp(`^${id}/.*$`));
-
-                    if (files.length === 0)
-                        throw new Error("no matching files found");
-
-                    return files;
-                })
-                .then(folder => {
                     const files: Promise<any[]>[] = [];
 
                     let statusCode = 204;
@@ -47,7 +38,11 @@ export default class InsightFacade implements IInsightFacade {
                         statusCode = 201
                     }
 
-                    folder.forEach((file: JSZipObject) => {
+                    zip.forEach((path: string, file: JSZipObject) => {
+                        if (file.dir == true) {
+                            return;
+                        }
+
                         files.push(file.async('string').then((data) => {
                             return JSON.parse(data).result.map((entry: any) => {
                                 return {
@@ -84,7 +79,7 @@ export default class InsightFacade implements IInsightFacade {
                     reject({
                         code: 400,
                         body: {
-                            error: err
+                            error: "Error loading zipfile"
                         }
                     });
                 });
@@ -185,6 +180,16 @@ export default class InsightFacade implements IInsightFacade {
                 })
             }
 
+            if (query.OPTIONS.FORM != 'TABLE') {
+                // invalid query
+                reject({
+                    code: 400,
+                    body: {
+                        error: "FORM was not TABLE"
+                    }
+                })
+            }
+
             // check that all the columns we're using start with courses_
             const ids = query.OPTIONS.COLUMNS.map(column => {
                 const matches = column.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
@@ -232,14 +237,14 @@ export default class InsightFacade implements IInsightFacade {
                 else {
                     return 0;
                 }
-            })
+            });
             queryList.forEach((value) => {
                 for (let key of Object.keys(value)) {
                     if(query.OPTIONS.COLUMNS.indexOf(key) === -1)  {
                         delete value[key];
                     }
                 }
-            })
+            });
             fulfill({
                 code: 200,
                 body: {
