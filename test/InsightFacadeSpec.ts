@@ -453,6 +453,42 @@ describe("InsightFacade.performQuery", () => {
         insightFacade = null;
     });
 
+    it('should produce the courses with averages between 85 and 98', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                AND: [
+                    {
+                        GT: {
+                            courses_avg: 85
+                        }
+                    },
+                    {
+                        LT: {
+                            courses_avg: 95
+                        }
+                    }
+                ]
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_avg",
+                    "courses_id",
+                ],
+                ORDER: "courses_id",
+                FORM: "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                render: 'TABLE',
+                result: [
+                    {courses_dept: "asia", courses_id: "385", courses_avg: 90.5}
+                ]
+            }
+        }));
+    });
+
     it('should return the matching entries with a simple query', () => {
         return insightFacade.performQuery({
                 WHERE: {
