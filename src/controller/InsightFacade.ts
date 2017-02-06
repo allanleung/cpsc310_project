@@ -14,11 +14,12 @@ const cachePath = __dirname + '/data.json';
 export default class InsightFacade implements IInsightFacade {
     dataSet: any;
 
-    constructor(cache?: boolean) {
+    constructor(cache = true) {
         Log.trace('InsightFacadeImpl::init()');
         this.dataSet = {};
 
         if (cache && fs.existsSync(cachePath)) {
+            Log.trace('Loading cached data');
             let cacheData = fs.readFileSync(cachePath);
             this.dataSet = JSON.parse(cacheData);
         }
