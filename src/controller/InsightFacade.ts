@@ -259,10 +259,12 @@ export default class InsightFacade implements IInsightFacade {
             let queryList : any [] = [];
             // for now, we only support the courses dataset
             try {
-                this.dataSet['courses'].forEach((value2: any) => {
-                    if (this.compareQuery(query, value2)) {
-                        queryList.push(value2);
-                    }
+                Object.keys(this.dataSet).forEach((key: string) => {
+                    this.dataSet[key].forEach((value2: any) => {
+                        if (this.compareQuery(query, value2)) {
+                            queryList.push(value2);
+                        }
+                    });
                 });
             } catch (e) {
                 reject({
