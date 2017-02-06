@@ -23,7 +23,7 @@ describe("InsightFacade.addDataset", () => {
     });
 
     beforeEach(() => {
-        insightFacade = new InsightFacade();
+        insightFacade = new InsightFacade(false);
     });
 
     afterEach(() => {
@@ -76,8 +76,8 @@ describe("InsightFacade.removeDataset", () => {
     let insightFacade: InsightFacade = null;
 
     beforeEach(() => {
-        insightFacade = new InsightFacade();
-        insightFacade.dataSet.set("courses", []);
+        insightFacade = new InsightFacade(false);
+        insightFacade.dataSet["courses"] = [];
     });
 
     afterEach(() => {
@@ -108,7 +108,7 @@ describe("InsightFacade.removeDataset", () => {
 });
 
 describe("InsightFacade.performQuery integration tests", () => {
-    let insightFacade = new InsightFacade();
+    let insightFacade = new InsightFacade(false);
 
     before(function() {
         this.timeout(10000);
@@ -296,8 +296,8 @@ describe("InsightFacade.performQuery", () => {
     let insightFacade: InsightFacade = null;
 
     beforeEach(() => {
-        insightFacade = new InsightFacade();
-        insightFacade.dataSet.set("courses", [
+        insightFacade = new InsightFacade(false);
+        insightFacade.dataSet["courses"] = [
             {
                 courses_title: "hong kong cinema",
                 courses_uuid: 39426,
@@ -342,7 +342,7 @@ describe("InsightFacade.performQuery", () => {
                 courses_avg: 90.5,
                 courses_dept: "asia"
             }
-        ]);
+        ];
     });
     afterEach(() => {
         insightFacade = null;
