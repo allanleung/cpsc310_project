@@ -40,7 +40,7 @@ export default class InsightFacade implements IInsightFacade {
 
     addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
-            new JSZip().loadAsync(content)
+            new JSZip().loadAsync(content, {base64: true})
                 .then(zip => {
                     const files: Promise<any[]>[] = [];
 

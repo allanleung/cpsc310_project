@@ -5,8 +5,8 @@
  */
 
 import InsightFacade from "../src/controller/InsightFacade";
-const rp = require('request-promise-native');
 import {expect} from 'chai';
+import * as fs from 'fs';
 
 describe("InsightFacade.addDataset", () => {
     let insightFacade: InsightFacade = null;
@@ -14,12 +14,7 @@ describe("InsightFacade.addDataset", () => {
 
     before(function() {
         this.timeout(10000);
-        return rp({
-            uri: 'https://github.com/ubccpsc/310/blob/2017jan/project/courses.zip?raw=true',
-            encoding: null
-        }).then((response: any) => {
-            content = response;
-        });
+        content = fs.readFileSync('test/courses.zip').toString('base64');
     });
 
     beforeEach(() => {
@@ -130,12 +125,8 @@ describe("InsightFacade.performQuery integration tests", () => {
 
     before(function() {
         this.timeout(10000);
-        return rp({
-            uri: 'https://github.com/ubccpsc/310/blob/2017jan/project/courses.zip?raw=true',
-            encoding: null
-        }).then((response: any) => {
-            return insightFacade.addDataset("courses", response);
-        });
+        const content = fs.readFileSync('test/courses.zip').toString('base64');
+        return insightFacade.addDataset('courses', content);
     });
 
     it('should return the correct result for a complex query', () => {
