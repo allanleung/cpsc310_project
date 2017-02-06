@@ -110,6 +110,15 @@ export default class InsightFacade implements IInsightFacade {
         return this.innerQueryLoop(query.WHERE, oneItem);
     }
 
+    verifyHasKey(key: string): boolean {
+        const matches = key.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
+
+        if (matches === null)
+            throw new Error("Key was in an invalid format");
+
+        return this.dataSet.has(matches[1]);
+    }
+
     innerQueryLoop(query: any, oneItem: any) : boolean {
         if (Object.keys(query).length == 0) {
             // base case
@@ -133,22 +142,25 @@ export default class InsightFacade implements IInsightFacade {
 
             case "LT":
                 let fieldLT: string = Object.keys(query["LT"])[0];
+                this.verifyHasKey(fieldLT);
                 return oneItem[fieldLT] < query["LT"][fieldLT];
 
             case "GT":
                 let fieldGT: string = Object.keys(query["GT"])[0];
+                this.verifyHasKey(fieldGT);
                 return oneItem[fieldGT] > query["GT"][fieldGT];
 
             case "EQ":
                 let fieldEQ: string = Object.keys(query["EQ"])[0];
+                this.verifyHasKey(fieldEQ);
                 return oneItem[fieldEQ] === query["EQ"][fieldEQ];
 
             case "NOT":
-                let fieldNOT: string = Object.keys(query["NOT"])[0];
-                return oneItem[fieldNOT] !== query["NOT"][fieldNOT];
+                return !this.innerQueryLoop(query["NOT"], oneItem);
 
             case "IS":
                 let fieldIS: string = Object.keys(query["IS"])[0];
+                this.verifyHasKey(fieldIS);
                 let starField : string = query["IS"][fieldIS];
                 if (starField[0] === "*") {
                     starField = "." + starField;
@@ -164,6 +176,8 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 return oneItem[fieldIS].match(starField) !== null;
+            default:
+                throw new Error("Query malformed: " + Object.keys(query)[0]);
         }
     }
 
@@ -205,8 +219,21 @@ export default class InsightFacade implements IInsightFacade {
                 return matches[1];
             });
 
-            const missing = ids.filter(id => !this.dataSet.has(id));
+            let missing;
 
+            try {
+                missing = query.OPTIONS.COLUMNS.filter(column => !this.verifyHasKey(column))
+                    .map(missing => missing.substr(0, missing.indexOf('_')));
+            } catch (e) {
+                reject({
+                    code: 400,
+                    body: {
+                        error: "Malformed key"
+                    }
+                })
+            }
+
+            // TODO crawl the query once to collect all of these too
             if (missing.length > 0) {
                 // 424, missing dataSets
                 reject({
@@ -219,11 +246,20 @@ export default class InsightFacade implements IInsightFacade {
 
             let queryList : any [] = [];
             // for now, we only support the courses dataset
-            this.dataSet.get('courses').forEach((value2) => {
-                if (this.compareQuery(query, value2)) {
-                    queryList.push(value2);
-                }
-            });
+            try {
+                this.dataSet.get('courses').forEach((value2) => {
+                    if (this.compareQuery(query, value2)) {
+                        queryList.push(value2);
+                    }
+                });
+            } catch (e) {
+                reject({
+                    code: 400,
+                    body: {
+                        error: "Malformed query"
+                    }
+                })
+            }
 
             queryList.sort((item1 ,item2) => {
                 let item1value = item1[query.OPTIONS.ORDER];

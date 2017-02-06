@@ -440,8 +440,10 @@ describe("InsightFacade.performQuery", () => {
     it('should correctly filter when using NOT', () => {
         return insightFacade.performQuery({
                 WHERE: {
-                    "NOT":{
-                        "courses_id": "325"
+                    "NOT": {
+                        "IS": {
+                            "courses_id": "325"
+                        }
                     }
                 },
                 OPTIONS: {
@@ -461,6 +463,40 @@ describe("InsightFacade.performQuery", () => {
                     result:  [
                         {courses_dept: "asia", courses_avg: 90.5},
                         {courses_dept: "asia", courses_avg: 98.5}
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should correctly filter when using a double NOT', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "NOT": {
+                        "NOT": {
+                            "IS": {
+                                "courses_id": "325"
+                            }
+                        }
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18}
                     ]
                 }
             });
@@ -691,6 +727,35 @@ describe("InsightFacade.performQuery", () => {
                 code: 400,
                 body: {
                     error: "FORM was not TABLE"
+                }
+            });
+        });
+    });
+
+    it('should fail on a malformed IS', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    IS: {
+                        IS: {
+                            "bad": "value"
+                        }
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 400,
+                body: {
+                    error: "Malformed query"
                 }
             });
         });
