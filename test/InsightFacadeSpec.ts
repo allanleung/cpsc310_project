@@ -275,7 +275,7 @@ describe("InsightFacade.Integration.performQuery", () => {
         }).then(response => {
             expect(response.code).to.equal(200);
             expect(response.body["result"]).to.not.be.empty;
-            for (var entry of response.body["result"]) {
+            for (let entry of response.body["result"]) {
                 expect(entry.courses_audit).to.be.above(5);
             }
         });
@@ -314,7 +314,7 @@ describe("InsightFacade.Integration.performQuery", () => {
         }).then(response => {
             expect(response.code).to.equal(200);
             expect(response.body["result"]).to.not.be.empty;
-            for (var entry of response.body["result"]) {
+            for (let entry of response.body["result"]) {
                 expect(entry.courses_avg).to.be.above(70);
                 expect(entry.courses_avg).to.be.below(80);
                 expect(entry.courses_dept).to.be.eq("biol")
