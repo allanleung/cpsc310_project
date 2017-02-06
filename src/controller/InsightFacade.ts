@@ -143,9 +143,7 @@ export default class InsightFacade implements IInsightFacade {
                 let QueryResults : boolean = false;
 
                 if (query["OR"].length === 0) {
-                    console.log(query["OR"]);
-                    console.log(query["OR"].length);
-                    // throw new Error("Query malformed: empty AND");
+                    throw new Error("Query malformed: empty AND");
                 }
 
                 for (let key of Object.keys(query["OR"])) {
@@ -157,9 +155,7 @@ export default class InsightFacade implements IInsightFacade {
                 let NotQueryResults : boolean = true;
 
                 if (query["AND"].length === 0) {
-                    console.log(query["AND"]);
-                    console.log(query["AND"].length);
-                //     throw new Error("Query malformed: empty AND");
+                    throw new Error("Query malformed: empty AND");
                 }
 
                 for (let key of Object.keys(query["AND"])) {
