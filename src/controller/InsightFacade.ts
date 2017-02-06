@@ -141,6 +141,13 @@ export default class InsightFacade implements IInsightFacade {
         switch (Object.keys(query)[0]) {
             case "OR":
                 let QueryResults : boolean = false;
+
+                if (query["OR"].length === 0) {
+                    console.log(query["OR"]);
+                    console.log(query["OR"].length);
+                    // throw new Error("Query malformed: empty AND");
+                }
+
                 for (let key of Object.keys(query["OR"])) {
                     QueryResults = QueryResults || this.innerQueryLoop(query["OR"][key], oneItem);
                 }
@@ -148,6 +155,13 @@ export default class InsightFacade implements IInsightFacade {
 
             case "AND":
                 let NotQueryResults : boolean = true;
+
+                if (query["AND"].length === 0) {
+                    console.log(query["AND"]);
+                    console.log(query["AND"].length);
+                //     throw new Error("Query malformed: empty AND");
+                }
+
                 for (let key of Object.keys(query["AND"])) {
                     NotQueryResults = NotQueryResults && this.innerQueryLoop(query["AND"][key], oneItem);
                 }
@@ -156,16 +170,31 @@ export default class InsightFacade implements IInsightFacade {
             case "LT":
                 let fieldLT: string = Object.keys(query["LT"])[0];
                 this.verifyHasKey(fieldLT);
+
+                if (typeof query["LT"][fieldLT] !== "number") {
+                    throw new Error("Query malformed: not a number");
+                }
+
                 return oneItem[fieldLT] < query["LT"][fieldLT];
 
             case "GT":
                 let fieldGT: string = Object.keys(query["GT"])[0];
                 this.verifyHasKey(fieldGT);
+
+                if (typeof query["GT"][fieldGT] !== "number") {
+                    throw new Error("Query malformed: not a number");
+                }
+
                 return oneItem[fieldGT] > query["GT"][fieldGT];
 
             case "EQ":
                 let fieldEQ: string = Object.keys(query["EQ"])[0];
                 this.verifyHasKey(fieldEQ);
+
+                if (typeof query["EQ"][fieldEQ] !== "string" && typeof query["EQ"][fieldEQ] !== "number") {
+                    throw new Error("Query malformed: not a string or number");
+                }
+
                 return oneItem[fieldEQ] === query["EQ"][fieldEQ];
 
             case "NOT":

@@ -746,6 +746,36 @@ describe("InsightFacade.performQuery", () => {
         });
     });
 
+    it('should work with EQ and a double value', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    EQ: {
+                        "courses_avg": 71.18
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18},
+                    ]
+                }
+            });
+        });
+    });
+
     it('should fail if ORDER is not in COLUMNS', () => {
         return insightFacade.performQuery({
                 WHERE: {},
@@ -851,6 +881,87 @@ describe("InsightFacade.performQuery", () => {
                         IS: {
                             "bad": "value"
                         }
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 400,
+                body: {
+                    error: "Malformed query"
+                }
+            });
+        });
+    });
+
+    it('should fail on a malformed LT', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    LT: {
+                        "courses_avg": "value"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 400,
+                body: {
+                    error: "Malformed query"
+                }
+            });
+        });
+    });
+
+    it('should fail on a malformed GT', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    GT: {
+                        "courses_avg": "value"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 400,
+                body: {
+                    error: "Malformed query"
+                }
+            });
+        });
+    });
+
+    it('should fail on a malformed EQ', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    GT: {
+                        "courses_avg": { "bad": "object" }
                     }
                 },
                 OPTIONS: {
