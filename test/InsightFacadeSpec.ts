@@ -1,17 +1,19 @@
 /**
  * Created by jerome on 2017-01-19.
+ *
+ * Contains testst for InsightFacade.
  */
 
 import InsightFacade from "../src/controller/InsightFacade";
 const rp = require('request-promise-native');
 import {expect} from 'chai';
-import {QueryRequest} from "../src/controller/IInsightFacade";
 
 describe("InsightFacade.addDataset", () => {
     let insightFacade: InsightFacade = null;
     let content: string;
 
-    before(() => {
+    before(function() {
+        this.timeout(10000);
         return rp({
             uri: 'https://github.com/ubccpsc/310/blob/2017jan/project/courses.zip?raw=true',
             encoding: null
@@ -28,57 +30,46 @@ describe("InsightFacade.addDataset", () => {
         insightFacade = null;
     });
 
-    it('should add an id to the dataset successfully', (done) => {
-        insightFacade.addDataset("courses/VISA110", content)
+    it('should add an id to the dataset successfully', function() {
+        this.timeout(10000);
+        return insightFacade.addDataset("courses", content)
             .then((response) => {
                 expect(response).to.deep.eq({
                     code: 204,
                     body: {}
                 });
+            });
+    });
 
-                done();
-            }).catch((err) => {
-            done(err);
+    it('should add an id to the dataset successfully twice', function() {
+        this.timeout(10000);
+        return insightFacade.addDataset("courses", content).then((response) => {
+            expect(response).to.deep.eq({
+                code: 204,
+                body: {}
+            });
+
+            return insightFacade.addDataset("courses", content);
+        }).then((response) => {
+            expect(response).to.deep.eq({
+                code: 201,
+                body: {}
+            });
         });
     });
 
-    it('should add an id to the dataset successfully twice', (done) => {
-        (function (insightFacade) {
-            insightFacade.addDataset("courses/VISA110", content).then((response) => {
-                expect(response).to.deep.eq({
-                    code: 204,
-                    body: {}
-                });
-
-                return insightFacade.addDataset("courses/VISA110", content);
-            }).then((response) => {
-                expect(response).to.deep.eq({
-                    code: 201,
-                    body: {}
-                });
-
-                done();
-            }).catch((err) => {
-                done(err);
+    it('should fail to add an invalid id', function() {
+        this.timeout(10000);
+        return insightFacade.addDataset("instructors", content).then((response) => {
+            throw new Error('there should not be a response');
+        }).catch((err) => {
+            expect(err).to.deep.eq({
+                code: 400,
+                body: {
+                    error: {}
+                }
             });
-        })(insightFacade);
-    });
-
-    it('should fail to add an invalid id', (done) => {
-        (function (insightFacade) {
-            insightFacade.addDataset("courses/invalid", content).then((response) => {
-                done(new Error('there should not be a response'));
-            }).catch((err) => {
-                expect(err).to.deep.eq({
-                    code: 400,
-                    body: {
-                        error: {}
-                    }
-                });
-
-                done();
-            });
-        })(insightFacade);
+        });
     });
 
 });
@@ -88,7 +79,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade();
-        insightFacade.dataSet.set("courses/VISA110", []);
+        insightFacade.dataSet.set("courses", []);
     });
 
     afterEach(() => {
@@ -96,170 +87,161 @@ describe("InsightFacade.removeDataset", () => {
     });
 
     it('should remove an existing ID successfully', () => {
-        insightFacade.removeDataset("courses/VISA110").then((response) => {
+        return insightFacade.removeDataset("courses").then((response) => {
             expect(response).to.deep.eq({
-                code: 200,
+                code: 204,
                 body: {}
             });
         });
     });
-});
 
-describe("InsightFacade.performQuery", () => {
-    let insightFacade: InsightFacade = null;
-
-    beforeEach(() => {
-        insightFacade = new InsightFacade();
-        insightFacade.dataSet.set("ASIA325", [
-            {
-                courses_title: "hong kong cinema",
-                courses_uuid: 39426,
-                courses_instructor: "bailey, c. d. alison",
-                courses_audit: 1,
-                courses_id: "325",
-                courses_pass: 71,
-                courses_fail: 1,
-                courses_avg: 71.18,
-                courses_dept: "asia"
-            },
-            {
-                courses_title: "hong kong cinema",
-                courses_uuid: 39427,
-                courses_instructor: "",
-                courses_audit: 1,
-                courses_id: "325",
-                courses_pass: 71,
-                courses_fail: 1,
-                courses_avg: 71.18,
-                courses_dept: "asia"
-            }]);
-    });
-    afterEach(() => {
-        insightFacade = null;
-    });
-
-    it('This is sample from D1 Page', () => {
-        insightFacade.performQuery({
-                WHERE: {
-                    "OR":[
-                        {
-                            "AND":[
-                                {
-                                    "GT":{
-                                        "courses_avg":90
-                                    }
-                                },
-                                {
-                                    "IS":{
-                                        "courses_dept":"adhe"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "EQ":{
-                                "courses_avg":95
-                            }
-                        }
-                    ]},
-                OPTIONS: {
-                    COLUMNS: [
-                        "courses_dept",
-                        "courses_id",
-                        "courses_avg"
-                    ],
-                    ORDER: "courses_avg",
-                    FORM: "TABLE",
-                }
-            }
-        ).then((response) => {
-            expect(response).to.deep.eq({
-                code: 400,
+    it('should fail to remove an id that hasn\'t been added', () => {
+        return insightFacade.removeDataset("fake").then(response => {
+            throw new Error("Should not have gotten response: " + response);
+        }, err => {
+            expect(err).to.deep.eq({
+                code: 404,
                 body: {
-                    render: 'TABLE',
-                    result: [ { courses_dept: 'adhe', courses_id: '329', courses_avg: 90.02 },
-                        { courses_dept: 'adhe', courses_id: '412', courses_avg: 90.16 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.17 },
-                        { courses_dept: 'adhe', courses_id: '412', courses_avg: 90.18 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.5 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.72 },
-                        { courses_dept: 'adhe', courses_id: '329', courses_avg: 90.82 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.85 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.29 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.33 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.33 },
-                        { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.48 },
-                        { courses_dept: 'adhe', courses_id: '329', courses_avg: 92.54 },
-                        { courses_dept: 'adhe', courses_id: '329', courses_avg: 93.33 },
-                        { courses_dept: 'rhsc', courses_id: '501', courses_avg: 95 },
-                        { courses_dept: 'bmeg', courses_id: '597', courses_avg: 95 },
-                        { courses_dept: 'bmeg', courses_id: '597', courses_avg: 95 },
-                        { courses_dept: 'cnps', courses_id: '535', courses_avg: 95 },
-                        { courses_dept: 'cnps', courses_id: '535', courses_avg: 95 },
-                        { courses_dept: 'cpsc', courses_id: '589', courses_avg: 95 },
-                        { courses_dept: 'cpsc', courses_id: '589', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'sowk', courses_id: '570', courses_avg: 95 },
-                        { courses_dept: 'econ', courses_id: '516', courses_avg: 95 },
-                        { courses_dept: 'edcp', courses_id: '473', courses_avg: 95 },
-                        { courses_dept: 'edcp', courses_id: '473', courses_avg: 95 },
-                        { courses_dept: 'epse', courses_id: '606', courses_avg: 95 },
-                        { courses_dept: 'epse', courses_id: '682', courses_avg: 95 },
-                        { courses_dept: 'epse', courses_id: '682', courses_avg: 95 },
-                        { courses_dept: 'kin', courses_id: '499', courses_avg: 95 },
-                        { courses_dept: 'kin', courses_id: '500', courses_avg: 95 },
-                        { courses_dept: 'kin', courses_id: '500', courses_avg: 95 },
-                        { courses_dept: 'math', courses_id: '532', courses_avg: 95 },
-                        { courses_dept: 'math', courses_id: '532', courses_avg: 95 },
-                        { courses_dept: 'mtrl', courses_id: '564', courses_avg: 95 },
-                        { courses_dept: 'mtrl', courses_id: '564', courses_avg: 95 },
-                        { courses_dept: 'mtrl', courses_id: '599', courses_avg: 95 },
-                        { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
-                        { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
-                        { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
-                        { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
-                        { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
-                        { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
-                        { courses_dept: 'nurs', courses_id: '424', courses_avg: 95 },
-                        { courses_dept: 'nurs', courses_id: '424', courses_avg: 95 },
-                        { courses_dept: 'obst', courses_id: '549', courses_avg: 95 },
-                        { courses_dept: 'psyc', courses_id: '501', courses_avg: 95 },
-                        { courses_dept: 'psyc', courses_id: '501', courses_avg: 95 },
-                        { courses_dept: 'econ', courses_id: '516', courses_avg: 95 },
-                        { courses_dept: 'adhe', courses_id: '329', courses_avg: 96.11 } ]
+                    error: "Resource not found"
                 }
             });
-        });
-
+        })
     });
-    it('This is sample from D1 Page', () => {
-        insightFacade.performQuery({
-                WHERE: {
-                    "GT":{
-                        "courses_avg":97
-                    }
-                },
-                OPTIONS: {
-                    COLUMNS: [
-                        "courses_dept",
-                        "courses_avg"
-                    ],
-                    ORDER: "courses_avg",
-                    FORM: "TABLE",
+});
+
+describe("InsightFacade.performQuery integration tests", () => {
+    let insightFacade = new InsightFacade();
+
+    before(function() {
+        this.timeout(10000);
+        return rp({
+            uri: 'https://github.com/ubccpsc/310/blob/2017jan/project/courses.zip?raw=true',
+            encoding: null
+        }).then((response: any) => {
+            return insightFacade.addDataset("courses", response);
+        });
+    });
+
+    it('should return the correct result for a complex query', () => {
+       return insightFacade.performQuery({
+           "WHERE":{
+               "OR":[
+                   {
+                       "AND":[
+                           {
+                               "GT":{
+                                   "courses_avg":90
+                               }
+                           },
+                           {
+                               "IS":{
+                                   "courses_dept":"adhe"
+                               }
+                           }
+                       ]
+                   },
+                   {
+                       "EQ":{
+                           "courses_avg":95
+                       }
+                   }
+               ]
+           },
+           "OPTIONS":{
+               "COLUMNS":[
+                   "courses_dept",
+                   "courses_id",
+                   "courses_avg"
+               ],
+               "ORDER":"courses_avg",
+               "FORM":"TABLE"
+           }
+       }).then(response => {
+           expect(response).to.deep.equal({
+               code: 200,
+               body: { render: 'TABLE',
+                   result:
+                       [ { courses_dept: 'adhe', courses_id: '329', courses_avg: 90.02 },
+                           { courses_dept: 'adhe', courses_id: '412', courses_avg: 90.16 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.17 },
+                           { courses_dept: 'adhe', courses_id: '412', courses_avg: 90.18 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.5 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.72 },
+                           { courses_dept: 'adhe', courses_id: '329', courses_avg: 90.82 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 90.85 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.29 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.33 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.33 },
+                           { courses_dept: 'adhe', courses_id: '330', courses_avg: 91.48 },
+                           { courses_dept: 'adhe', courses_id: '329', courses_avg: 92.54 },
+                           { courses_dept: 'adhe', courses_id: '329', courses_avg: 93.33 },
+                           { courses_dept: 'rhsc', courses_id: '501', courses_avg: 95 },
+                           { courses_dept: 'bmeg', courses_id: '597', courses_avg: 95 },
+                           { courses_dept: 'bmeg', courses_id: '597', courses_avg: 95 },
+                           { courses_dept: 'cnps', courses_id: '535', courses_avg: 95 },
+                           { courses_dept: 'cnps', courses_id: '535', courses_avg: 95 },
+                           { courses_dept: 'cpsc', courses_id: '589', courses_avg: 95 },
+                           { courses_dept: 'cpsc', courses_id: '589', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'crwr', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'sowk', courses_id: '570', courses_avg: 95 },
+                           { courses_dept: 'econ', courses_id: '516', courses_avg: 95 },
+                           { courses_dept: 'edcp', courses_id: '473', courses_avg: 95 },
+                           { courses_dept: 'edcp', courses_id: '473', courses_avg: 95 },
+                           { courses_dept: 'epse', courses_id: '606', courses_avg: 95 },
+                           { courses_dept: 'epse', courses_id: '682', courses_avg: 95 },
+                           { courses_dept: 'epse', courses_id: '682', courses_avg: 95 },
+                           { courses_dept: 'kin', courses_id: '499', courses_avg: 95 },
+                           { courses_dept: 'kin', courses_id: '500', courses_avg: 95 },
+                           { courses_dept: 'kin', courses_id: '500', courses_avg: 95 },
+                           { courses_dept: 'math', courses_id: '532', courses_avg: 95 },
+                           { courses_dept: 'math', courses_id: '532', courses_avg: 95 },
+                           { courses_dept: 'mtrl', courses_id: '564', courses_avg: 95 },
+                           { courses_dept: 'mtrl', courses_id: '564', courses_avg: 95 },
+                           { courses_dept: 'mtrl', courses_id: '599', courses_avg: 95 },
+                           { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
+                           { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
+                           { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
+                           { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
+                           { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
+                           { courses_dept: 'musc', courses_id: '553', courses_avg: 95 },
+                           { courses_dept: 'nurs', courses_id: '424', courses_avg: 95 },
+                           { courses_dept: 'nurs', courses_id: '424', courses_avg: 95 },
+                           { courses_dept: 'obst', courses_id: '549', courses_avg: 95 },
+                           { courses_dept: 'psyc', courses_id: '501', courses_avg: 95 },
+                           { courses_dept: 'psyc', courses_id: '501', courses_avg: 95 },
+                           { courses_dept: 'econ', courses_id: '516', courses_avg: 95 },
+                           { courses_dept: 'adhe', courses_id: '329', courses_avg: 96.11 } ] }
+           })
+       })
+    });
+
+    it('should return the correct result for a simple query', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "GT":{
+                    "courses_avg":97
                 }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_avg"
+                ],
+                "ORDER":"courses_avg",
+                "FORM":"TABLE"
             }
-        ).then((response) => {
-            expect(response).to.deep.eq({
-                code: 400,
-                body: {
-                    render: 'TABLE',
-                    result:  [ { courses_dept: 'epse', courses_avg: 97.09 },
+        }).then(response => {
+            expect(response).to.deep.equal({
+                code: 200,
+                body: { render: 'TABLE',
+                result:
+                    [ { courses_dept: 'epse', courses_avg: 97.09 },
                         { courses_dept: 'math', courses_avg: 97.09 },
                         { courses_dept: 'math', courses_avg: 97.09 },
                         { courses_dept: 'epse', courses_avg: 97.09 },
@@ -307,11 +289,389 @@ describe("InsightFacade.performQuery", () => {
                         { courses_dept: 'spph', courses_avg: 98.98 },
                         { courses_dept: 'cnps', courses_avg: 99.19 },
                         { courses_dept: 'math', courses_avg: 99.78 },
-                        { courses_dept: 'math', courses_avg: 99.78 } ]
+                        { courses_dept: 'math', courses_avg: 99.78 } ] }})
+        })
+    })
+});
+
+describe("InsightFacade.performQuery", () => {
+    let insightFacade: InsightFacade = null;
+
+    beforeEach(() => {
+        insightFacade = new InsightFacade();
+        insightFacade.dataSet.set("courses", [
+            {
+                courses_title: "hong kong cinema",
+                courses_uuid: 39426,
+                courses_instructor: "bailey, c. d. alison",
+                courses_audit: 1,
+                courses_id: "325",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 71.18,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "hong kong cinema",
+                courses_uuid: 39427,
+                courses_instructor: "",
+                courses_audit: 1,
+                courses_id: "325",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 71.18,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "hong kong cinema 2",
+                courses_uuid: 39428,
+                courses_instructor: "some guy",
+                courses_audit: 1,
+                courses_id: "315",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 98.5,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "vancouver cinema",
+                courses_uuid: 39429,
+                courses_instructor: "some guy 2",
+                courses_audit: 1,
+                courses_id: "385",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 90.5,
+                courses_dept: "asia"
+            }
+        ]);
+    });
+    afterEach(() => {
+        insightFacade = null;
+    });
+
+    it('should return the matching entries with a simple query', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "IS": {
+                        courses_id: "325"
+                    }},
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_id",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result: [
+                        {courses_dept: "asia", courses_id: "325", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_id: "325", courses_avg: 71.18}
+                    ]
                 }
             });
         });
-
     });
 
+    it('should correctly filter when given a metric', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "GT":{
+                        "courses_avg":97
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 98.5}
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should correctly filter when given a metric to be less than', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "LT":{
+                        "courses_avg": 80
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18}
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should correctly filter when using NOT', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "NOT":{
+                        "courses_id": "325"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 90.5},
+                        {courses_dept: "asia", courses_avg: 98.5}
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should correctly apply an OR query', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "OR": [
+                        {
+                            "GT": {
+                                "courses_avg": 97
+                            }
+                        },
+                        {
+                            "IS": {
+                                "courses_id": "325"
+                            }
+                        }
+                    ]
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg",
+                        "courses_id",
+                    ],
+                    ORDER: "courses_id",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 98.5, courses_id: "315"},
+                        {courses_dept: "asia", courses_avg: 71.18, courses_id: "325"},
+                        {courses_dept: "asia", courses_avg: 71.18, courses_id: "325"}
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should correctly process stars in IS statements', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "IS": {
+                        "courses_title": "*cinema"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 90.5},
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should correctly process final stars in IS statements', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "IS": {
+                        "courses_title": "hong kong*"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 98.5},
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should produce all the data for an empty query', () => {
+        return insightFacade.performQuery({
+                WHERE: {},
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 90.5},
+                        {courses_dept: "asia", courses_avg: 98.5},
+                    ]
+                }
+            });
+        });
+    });
+
+    it('should fail if ORDER is not in COLUMNS', () => {
+        return insightFacade.performQuery({
+                WHERE: {},
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_id",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 400,
+                body: {
+                    error: "ORDER was not in COLUMNS"
+                }
+            });
+        });
+    });
+
+    it('should return missing IDs if columns include non-courses ids', () => {
+        return insightFacade.performQuery({
+                WHERE: {},
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "instructors_name",
+                        "fake_sham",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_dept",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 424,
+                body: {
+                    missing: ['instructors', 'fake']
+                }
+            });
+        });
+    });
+
+    it('should ignore malformed columns', () => {
+        return insightFacade.performQuery({
+                WHERE: {},
+                OPTIONS: {
+                    COLUMNS: [
+                        "fake_sham",
+                        "bad",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 424,
+                body: {
+                    missing: ["fake"]
+                }
+            });
+        });
+    });
 });

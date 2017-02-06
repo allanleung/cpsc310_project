@@ -30,36 +30,55 @@ export default class InsightFacade implements IInsightFacade {
     addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
             new JSZip().loadAsync(content)
-                .then((zip: any) => {
-                    return zip.file(id).async("string");
+                .then(zip => {
+                    // find all matching files
+                    const files = zip.file(new RegExp(`^${id}/.*$`));
+
+                    if (files.length === 0)
+                        throw new Error("no matching files found");
+
+                    return files;
                 })
-                .then((data: any) => {
+                .then(folder => {
+                    const files: Promise<any[]>[] = [];
+
                     let statusCode = 204;
                     if (this.dataSet.has(id)) {
                         statusCode = 201
                     }
 
-                    let result = JSON.parse(data).result.map((entry: any) => {
-                        return {
-                            courses_dept: entry.Subject,
-                            courses_id: entry.Course,
-                            courses_avg: entry.Avg,
-                            courses_instructor: entry.Professor,
-                            courses_title: entry.Title,
-                            courses_pass: entry.Pass,
-                            courses_fail: entry.Fail,
-                            courses_audit: entry.Audit,
-                            courses_uuid: entry.id
-                        };
-                    })
-                    //console.log(result);
-                    this.dataSet.set(id, result);
-
-
-                    resolve({
-                        code: statusCode,
-                        body: {}
+                    folder.forEach((file: JSZipObject) => {
+                        files.push(file.async('string').then((data) => {
+                            return JSON.parse(data).result.map((entry: any) => {
+                                return {
+                                    courses_dept: entry.Subject,
+                                    courses_id: entry.Course,
+                                    courses_avg: entry.Avg,
+                                    courses_instructor: entry.Professor,
+                                    courses_title: entry.Title,
+                                    courses_pass: entry.Pass,
+                                    courses_fail: entry.Fail,
+                                    courses_audit: entry.Audit,
+                                    courses_uuid: entry.id
+                                };
+                            });
+                        }));
                     });
+
+                    return Promise.all(files).then(data => {
+                        const allItems: any[] = [];
+
+                        for (let item of data) {
+                            allItems.push(...item);
+                        }
+
+                        this.dataSet.set(id, allItems);
+
+                        resolve({
+                            code: statusCode,
+                            body: {}
+                        })
+                    })
                 })
                 .catch((err: any) => {
                     reject({
@@ -86,7 +105,7 @@ export default class InsightFacade implements IInsightFacade {
             this.dataSet.delete(id);
 
             fulfill({
-                code: 200,
+                code: 204,
                 body: {}
             });
         });
@@ -97,6 +116,11 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     innerQueryLoop(query: any, oneItem: any) : boolean {
+        if (Object.keys(query).length == 0) {
+            // base case
+            return true;
+        }
+
         switch (Object.keys(query)[0]) {
             case "OR":
                 let QueryResults : boolean = false;
@@ -110,7 +134,7 @@ export default class InsightFacade implements IInsightFacade {
                 for (let key of Object.keys(query["AND"])) {
                     NotQueryResults = NotQueryResults && this.innerQueryLoop(query["AND"][key], oneItem);
                 }
-                return QueryResults;
+                return NotQueryResults;
 
             case "LT":
                 let fieldLT: string = Object.keys(query["LT"])[0];
@@ -130,7 +154,7 @@ export default class InsightFacade implements IInsightFacade {
 
             case "IS":
                 let fieldIS: string = Object.keys(query["IS"])[0];
-                let starField : string = query["IS"][fieldIS][0];
+                let starField : string = query["IS"][fieldIS];
                 if (starField[0] === "*") {
                     starField = "." + starField;
                 }
@@ -144,30 +168,58 @@ export default class InsightFacade implements IInsightFacade {
                     starField = starField + "$"; // bc of regex
                 }
 
-                if (oneItem[fieldIS].match(starField) === null) { // if it = to false, no match
-                    return false;
-                }
-                else {
-                    return true;
-                }
-
+                return oneItem[fieldIS].match(starField) !== null;
         }
     }
 
-
     performQuery(query: QueryRequest): Promise <InsightResponse> {
         return new Promise<InsightResponse>((fulfill, reject) => {
-            let queryList : any [] = [];
-            this.dataSet.forEach((value, key) => {
-                    value.forEach((value2) => {
-                        this.compareQuery(query, value2);
-                        if (this.compareQuery(query, value2)) {
-                            queryList.push(value2);
-                        }
-                    })
-                }
+            // check some invariants
+            if (query.OPTIONS.COLUMNS.indexOf(query.OPTIONS.ORDER) === -1) {
+                // invalid query
+                reject({
+                    code: 400,
+                    body: {
+                        error: "ORDER was not in COLUMNS"
+                    }
+                })
+            }
 
-            );
+            // check that all the columns we're using start with courses_
+            const ids = query.OPTIONS.COLUMNS.map(column => {
+                const matches = column.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
+
+                if (matches === null)
+                    reject({
+                        code: 400,
+                        body: {
+                            error: "COLUMNS contained malformed key"
+                        }
+                    });
+
+                return matches[1];
+            });
+
+            const missing = ids.filter(id => !this.dataSet.has(id));
+
+            if (missing.length > 0) {
+                // 424, missing dataSets
+                reject({
+                    code: 424,
+                    body: {
+                        missing
+                    }
+                });
+            }
+
+            let queryList : any [] = [];
+            // for now, we only support the courses dataset
+            this.dataSet.get('courses').forEach((value2) => {
+                if (this.compareQuery(query, value2)) {
+                    queryList.push(value2);
+                }
+            });
+
             queryList.sort((item1 ,item2) => {
                 let item1value = item1[query.OPTIONS.ORDER];
                 let item2value = item2[query.OPTIONS.ORDER];
