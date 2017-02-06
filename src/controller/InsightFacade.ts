@@ -149,7 +149,7 @@ export default class InsightFacade implements IInsightFacade {
         if (query === null)
             return null; // malformed
 
-        if (Object.keys(query).length === 0)
+        if (Object.keys(query).length !== 1)
             return null; // malformed
 
         const filter = Object.keys(query)[0];
@@ -244,7 +244,7 @@ export default class InsightFacade implements IInsightFacade {
                 let value: string = query["IS"][key];
 
                 if (value.startsWith("*") && value.endsWith("*")) {
-                    const searchString = value.substr(1, value.length - 1);
+                    const searchString = value.substr(1, value.length - 2);
                     return oneItem[key].indexOf(searchString) !== -1;
                 } else if (value.startsWith("*")) {
                     const searchString = value.substr(1);
@@ -260,6 +260,9 @@ export default class InsightFacade implements IInsightFacade {
 
     verifyOptions(options: QueryOptions): string[] {
         if (!(options.COLUMNS instanceof Array))
+            return null;
+
+        if (options.COLUMNS.length < 1)
             return null;
 
         if (typeof options.ORDER !== 'string')

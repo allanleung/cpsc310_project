@@ -122,7 +122,7 @@ describe("InsightFacade.removeDataset", () => {
     });
 });
 
-describe("InsightFacade.performQuery integration tests", () => {
+describe("InsightFacade.Integration.performQuery", () => {
     let insightFacade = new InsightFacade(false);
 
     before(function() {
@@ -716,6 +716,37 @@ describe("InsightFacade.performQuery", () => {
         });
     });
 
+    it('should correctly process surrounding stars in IS statements', () => {
+        return insightFacade.performQuery({
+                WHERE: {
+                    "IS": {
+                        "courses_title": "*kong*"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_dept",
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "TABLE",
+                }
+            }
+        ).then((response) => {
+            expect(response).to.deep.eq({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result:  [
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 71.18},
+                        {courses_dept: "asia", courses_avg: 98.5},
+                    ]
+                }
+            });
+        });
+    });
+
     it('should correctly process final stars in IS statements', () => {
         return insightFacade.performQuery({
                 WHERE: {
@@ -1011,5 +1042,438 @@ describe("InsightFacade.performQuery", () => {
                 }
             });
         });
+    });
+
+    it('should fail when given an undefined query', () => {
+        return insightFacade.performQuery({
+            WHERE: undefined,
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(response => {
+            throw new Error("Should not have gotten response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when given an undefined query', () => {
+        return insightFacade.performQuery({
+            WHERE: null,
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have gotten response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when given an invalid AND query', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                "AND": "bad"
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have gotten response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when one of the inner items of AND is invalid', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                AND: [
+                    {
+                        EQ: {
+                            "courses_avg": 90,
+                        },
+                    },
+                    null
+                ]
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have gotten result");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }));
+    });
+
+    it('should fail when the value of an IS is undefined', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: undefined
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when the value of an IS is null', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: null
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when the value of a key in an IS is a number', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "courses_avg": 90.5
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when COLUMNS is not an array', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "courses_id": "325"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: null,
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when ORDER is not an array', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "courses_id": "325"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: null,
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when COLUMNS is empty', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "courses_id": "325"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when IS is empty', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when AND is empty', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                AND: []
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when IS is has more than one entry', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "courses_id": "325",
+                    "courses_title": "test"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when NOT is not an array', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                NOT: null
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when NOT has more than one item', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                NOT: {
+                    IS: {
+                        "courses_id": "325"
+                    },
+                    GT: {
+                        "courses_avg": 90.5
+                    }
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when WHERE has more than one item', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "courses_id": "325"
+                },
+                GT: {
+                    "courses_avg": 90.5
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should produce a missing dataset in an IS', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    "fake_id": "325"
+                },
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 424,
+            body: {
+                missing: ['fake']
+            }
+        }))
+    });
+
+    it('should produce a missing dataset in an AND', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                AND: [
+                    {
+                        IS: {
+                            "fake_id": "325"
+                        }
+                    },
+                    {
+                        IS: {
+                            "courses_id": "325"
+                        }
+                    }
+                ]
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg",
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 424,
+            body: {
+                missing: ['fake']
+            }
+        }))
     });
 });
