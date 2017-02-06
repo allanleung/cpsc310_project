@@ -2,17 +2,28 @@
 /**
  * This is the main programmatic entry point for the project.
  */
+const fs = require('fs');
+
 import {IInsightFacade, InsightResponse, QueryRequest} from "./IInsightFacade";
 import * as JSZip from 'jszip' ;
 
 import Log from "../Util";
 
-export default class InsightFacade implements IInsightFacade {
-    dataSet: Map<string, any[]>;
+const cachePath = __dirname + '/data.json';
 
-    constructor() {
+export default class InsightFacade implements IInsightFacade {
+    dataSet: any;
+
+    constructor(cache = true) {
         Log.trace('InsightFacadeImpl::init()');
-        this.dataSet = new Map<string, any>();
+        this.dataSet = {};
+
+        if (cache && fs.existsSync(cachePath)) {
+            Log.trace('Loading cached data');
+            let cacheData = fs.readFileSync(cachePath);
+            this.dataSet = JSON.parse(cacheData);
+        }
+        // this.dataSet = new Map<string, any>();
     }
 
     /**
@@ -34,7 +45,7 @@ export default class InsightFacade implements IInsightFacade {
                     const files: Promise<any[]>[] = [];
 
                     let statusCode = 204;
-                    if (this.dataSet.has(id)) {
+                    if (id in this.dataSet) {
                         statusCode = 201
                     }
 
@@ -67,7 +78,9 @@ export default class InsightFacade implements IInsightFacade {
                             allItems.push(...item);
                         }
 
-                        this.dataSet.set(id, allItems);
+                        this.dataSet[id] = allItems;
+
+                        fs.writeFileSync(cachePath, JSON.stringify(this.dataSet));
 
                         resolve({
                             code: statusCode,
@@ -88,7 +101,7 @@ export default class InsightFacade implements IInsightFacade {
 
     removeDataset(id: string): Promise<InsightResponse> {
         return new Promise((fulfill, reject) => {
-            if (!this.dataSet.has(id)) {
+            if (this.dataSet[id] == undefined) {
                 reject({
                     code: 404,
                     body: {
@@ -97,7 +110,7 @@ export default class InsightFacade implements IInsightFacade {
                 });
             }
 
-            this.dataSet.delete(id);
+            delete this.dataSet[id];
 
             fulfill({
                 code: 204,
@@ -116,7 +129,7 @@ export default class InsightFacade implements IInsightFacade {
         if (matches === null)
             throw new Error("Key was in an invalid format");
 
-        return this.dataSet.has(matches[1]);
+        return this.dataSet[matches[1]] != undefined;
     }
 
     innerQueryLoop(query: any, oneItem: any) : boolean {
@@ -247,10 +260,12 @@ export default class InsightFacade implements IInsightFacade {
             let queryList : any [] = [];
             // for now, we only support the courses dataset
             try {
-                this.dataSet.get('courses').forEach((value2) => {
-                    if (this.compareQuery(query, value2)) {
-                        queryList.push(value2);
-                    }
+                Object.keys(this.dataSet).forEach((key: string) => {
+                    this.dataSet[key].forEach((value2: any) => {
+                        if (this.compareQuery(query, value2)) {
+                            queryList.push(value2);
+                        }
+                    });
                 });
             } catch (e) {
                 reject({
