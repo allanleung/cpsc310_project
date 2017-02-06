@@ -1,4 +1,4 @@
-## Synopsis
+## Autobot results: 77% coverage, 47% tests
 
 D1
 
