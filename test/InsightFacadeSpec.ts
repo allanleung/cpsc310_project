@@ -58,6 +58,24 @@ describe("InsightFacade.addDataset", () => {
         });
     });
 
+    it('should cache a dataset and load the data', function() {
+        this.timeout(10000);
+        return insightFacade.addDataset("courses", content).then((response) => {
+            expect(response).to.deep.eq({
+                code: 204,
+                body: {}
+            });
+
+            insightFacade = new InsightFacade();
+            return insightFacade.addDataset("courses", content);
+        }).then((response) => {
+            expect(response).to.deep.eq({
+                code: 201,
+                body: {}
+            });
+        });
+    });
+
     it('should fail to add an invalid dataset', () => {
         return insightFacade.addDataset("courses", null).then(response => {
             throw new Error("Should not have gotten response: " + response);
@@ -218,6 +236,100 @@ describe("InsightFacade.performQuery integration tests", () => {
            })
        })
     });
+
+    it('should return the correct reuslt for an instructor', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "EQ":{
+                    "courses_instructor": "smulders, dave"
+                }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg",
+                    "courses_instructor"
+                ],
+                "ORDER": "courses_id",
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.equal(200);
+            expect(response.body["result"]).to.not.be.empty;
+            for (var entry of response.body["result"]) {
+                expect(entry.courses_instructor).to.equal('smulders, dave');
+            }
+        });
+    });
+
+    it('should return the correct result for courses with a lot of auditors', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "GT":{
+                    "courses_audit": 5
+                }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_id",
+                    "courses_audit"
+                ],
+                "ORDER": "courses_id",
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.equal(200);
+            expect(response.body["result"]).to.not.be.empty;
+            for (var entry of response.body["result"]) {
+                expect(entry.courses_audit).to.be.above(5);
+            }
+        });
+    });
+
+    it('should return the correct result for courses in a dept with an average between 70 and 80', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "AND": [
+                    {
+                        "GT":{
+                            "courses_avg": 70
+                        }
+                    },
+                    {
+                        "LT":{
+                            "courses_avg": 80
+                        }
+                    },
+                    {
+                        "EQ":{
+                            "courses_dept": "biol"
+                        }
+                    }
+                ]
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                "ORDER": "courses_id",
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.equal(200);
+            expect(response.body["result"]).to.not.be.empty;
+            for (var entry of response.body["result"]) {
+                expect(entry.courses_avg).to.be.above(70);
+                expect(entry.courses_avg).to.be.below(80);
+                expect(entry.courses_dept).to.be.eq("biol")
+            }
+        });
+    });
+
+
 
     it('should return the correct result for a simple query', () => {
         return insightFacade.performQuery({
