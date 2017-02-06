@@ -1,29 +1,40 @@
 ///<reference path="IInsightFacade.ts"/>
+import {isUndefined} from "util";
 /**
  * This is the main programmatic entry point for the project.
  */
 const fs = require('fs');
 
-import {IInsightFacade, InsightResponse, QueryRequest} from "./IInsightFacade";
+import {IInsightFacade, InsightResponse, QueryRequest, QueryOptions} from "./IInsightFacade";
 import * as JSZip from 'jszip' ;
 
 import Log from "../Util";
 
 const cachePath = __dirname + '/data.json';
 
+const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
+
 export default class InsightFacade implements IInsightFacade {
-    dataSet: any;
+    dataSet: Map<string, any[]>;
+    cache: boolean;
 
-    constructor(cache = true) {
+    constructor(cache = false) {
         Log.trace('InsightFacadeImpl::init()');
-        this.dataSet = {};
+        this.dataSet = new Map<string, any[]>();
+        this.cache = cache;
 
-        if (cache && fs.existsSync(cachePath)) {
+        if (this.cache && fs.existsSync(cachePath)) {
             Log.trace('Loading cached data');
-            let cacheData = fs.readFileSync(cachePath);
-            this.dataSet = JSON.parse(cacheData);
+            let cacheData: any[] = JSON.parse(fs.readFileSync(cachePath));
+            this.dataSet = new Map<string, any[]>(cacheData);
         }
         // this.dataSet = new Map<string, any>();
+    }
+
+    static resetCache() {
+        if (fs.existsSync(cachePath)) {
+            fs.unlinkSync(cachePath);
+        }
     }
 
     /**
@@ -45,7 +56,7 @@ export default class InsightFacade implements IInsightFacade {
                     const files: Promise<any[]>[] = [];
 
                     let statusCode = 204;
-                    if (id in this.dataSet) {
+                    if (this.dataSet.has(id)) {
                         statusCode = 201
                     }
 
@@ -78,17 +89,25 @@ export default class InsightFacade implements IInsightFacade {
                             allItems.push(...item);
                         }
 
-                        this.dataSet[id] = allItems;
+                        this.dataSet.set(id, allItems);
 
-                        fs.writeFileSync(cachePath, JSON.stringify(this.dataSet));
+                        if (this.cache) {
+                            const entries: any[] = [];
+
+                            this.dataSet.forEach((value, key) => {
+                                entries.push([key, value]);
+                            });
+
+                            fs.writeFileSync(cachePath, JSON.stringify(entries));
+                        }
 
                         resolve({
                             code: statusCode,
                             body: {}
                         })
-                    })
+                    });
                 })
-                .catch((err: any) => {
+                .catch(() => {
                     reject({
                         code: 400,
                         body: {
@@ -101,7 +120,7 @@ export default class InsightFacade implements IInsightFacade {
 
     removeDataset(id: string): Promise<InsightResponse> {
         return new Promise((fulfill, reject) => {
-            if (this.dataSet[id] == undefined) {
+            if (!this.dataSet.has(id)) {
                 reject({
                     code: 404,
                     body: {
@@ -110,7 +129,7 @@ export default class InsightFacade implements IInsightFacade {
                 });
             }
 
-            delete this.dataSet[id];
+            delete this.dataSet.delete(id);
 
             fulfill({
                 code: 204,
@@ -123,155 +142,182 @@ export default class InsightFacade implements IInsightFacade {
         return this.innerQueryLoop(query.WHERE, oneItem);
     }
 
-    verifyHasKey(key: string): boolean {
-        const matches = key.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
+    verifyQuery(query: any) : string[] {
+        if (typeof query !== "object")
+            return null; // malformed
 
-        if (matches === null)
-            throw new Error("Key was in an invalid format");
+        if (query === null)
+            return null; // malformed
 
-        return this.dataSet[matches[1]] != undefined;
+        if (Object.keys(query).length === 0)
+            return null; // malformed
+
+        const filter = Object.keys(query)[0];
+
+        const missing: string[] = [];
+
+        switch (filter) {
+            case "OR":
+            case "AND":
+                if (!(query[filter] instanceof Array))
+                    return null; // malformed
+
+                if (query[filter].length === 0)
+                    return null; // malformed
+
+                return query[filter].reduce((acc: string[], innerQuery: any) => {
+                    const innerResult = this.verifyQuery(innerQuery);
+
+                    if (innerResult === null)
+                        return null;
+
+                    acc.push(...innerResult);
+
+                    return acc;
+                }, missing);
+            case "NOT":
+                return this.verifyQuery(query[filter]);
+            case "LT":
+            case "GT":
+            case "EQ":
+            case "IS":
+                const value = query[filter];
+
+                if (typeof value !== "object")
+                    return null;
+
+                if (value === null)
+                    return null;
+
+                if (Object.keys(value).length !== 1)
+                    return null;
+
+                const key = Object.keys(value)[0];
+
+                const matches = key.match(keyRegex);
+
+                if (matches === null)
+                    return null;
+
+                if (!this.dataSet.has(matches[1]))
+                    missing.push(matches[1]); // missing dataset
+
+                if (filter === 'IS') {
+                    if (typeof value[key] === 'string')
+                        return missing;
+                    else
+                        return null;
+                } else { // EQ, GT, LT
+                    if (typeof value[key] === 'number')
+                        return missing;
+                    else
+                        return null;
+                }
+        }
     }
 
     innerQueryLoop(query: any, oneItem: any) : boolean {
-        if (Object.keys(query).length == 0) {
-            // base case
-            return true;
-        }
+        let key;
 
         switch (Object.keys(query)[0]) {
             case "OR":
-                let QueryResults : boolean = false;
-
-                if (query["OR"].length === 0) {
-                    throw new Error("Query malformed: empty AND");
-                }
-
-                for (let key of Object.keys(query["OR"])) {
-                    QueryResults = QueryResults || this.innerQueryLoop(query["OR"][key], oneItem);
-                }
-                return QueryResults;
-
+                return query["OR"].reduce((acc: boolean, innerQuery: any) => {
+                    return acc || this.innerQueryLoop(innerQuery, oneItem);
+                }, false);
             case "AND":
-                let NotQueryResults : boolean = true;
-
-                if (query["AND"].length === 0) {
-                    throw new Error("Query malformed: empty AND");
-                }
-
-                for (let key of Object.keys(query["AND"])) {
-                    NotQueryResults = NotQueryResults && this.innerQueryLoop(query["AND"][key], oneItem);
-                }
-                return NotQueryResults;
-
+                return query["AND"].reduce((acc: boolean, innerQuery: any) => {
+                    return acc && this.innerQueryLoop(innerQuery, oneItem);
+                }, true);
             case "LT":
-                let fieldLT: string = Object.keys(query["LT"])[0];
-                this.verifyHasKey(fieldLT);
-
-                if (typeof query["LT"][fieldLT] !== "number") {
-                    throw new Error("Query malformed: not a number");
-                }
-
-                return oneItem[fieldLT] < query["LT"][fieldLT];
-
+                key = Object.keys(query["LT"])[0];
+                return oneItem[key] < query["LT"][key];
             case "GT":
-                let fieldGT: string = Object.keys(query["GT"])[0];
-                this.verifyHasKey(fieldGT);
-
-                if (typeof query["GT"][fieldGT] !== "number") {
-                    throw new Error("Query malformed: not a number");
-                }
-
-                return oneItem[fieldGT] > query["GT"][fieldGT];
-
+                key = Object.keys(query["GT"])[0];
+                return oneItem[key] > query["GT"][key];
             case "EQ":
-                let fieldEQ: string = Object.keys(query["EQ"])[0];
-                this.verifyHasKey(fieldEQ);
-
-                if (typeof query["EQ"][fieldEQ] !== "string" && typeof query["EQ"][fieldEQ] !== "number") {
-                    throw new Error("Query malformed: not a string or number");
-                }
-
-                return oneItem[fieldEQ] === query["EQ"][fieldEQ];
-
+                key = Object.keys(query["EQ"])[0];
+                return oneItem[key] === query["EQ"][key];
             case "NOT":
                 return !this.innerQueryLoop(query["NOT"], oneItem);
-
             case "IS":
-                let fieldIS: string = Object.keys(query["IS"])[0];
-                this.verifyHasKey(fieldIS);
-                let starField : string = query["IS"][fieldIS];
-                if (starField[0] === "*") {
-                    starField = "." + starField;
-                }
-                else {
-                    starField = "^" + starField; // bc of regex
-                }
-                if (starField[starField.length - 1] === "*") {
-                    starField = starField.substring(0, starField.length - 1) + ".*";
-                }
-                else {
-                    starField = starField + "$"; // bc of regex
-                }
+                key = Object.keys(query["IS"])[0];
+                let value: string = query["IS"][key];
 
-                return oneItem[fieldIS].match(starField) !== null;
-            default:
-                throw new Error("Query malformed: " + Object.keys(query)[0]);
+                if (value.startsWith("*") && value.endsWith("*")) {
+                    const searchString = value.substr(1, value.length - 1);
+                    return oneItem[key].indexOf(searchString) !== -1;
+                } else if (value.startsWith("*")) {
+                    const searchString = value.substr(1);
+                    return oneItem[key].indexOf(searchString) + searchString.length === oneItem[key].length;
+                } else if (value.endsWith("*")) {
+                    const searchString = value.substr(0, value.length - 1);
+                    return oneItem[key].indexOf(searchString) === 0;
+                } else {
+                    return oneItem[key] === value;
+                }
         }
+    }
+
+    verifyOptions(options: QueryOptions): string[] {
+        if (!(options.COLUMNS instanceof Array))
+            return null;
+
+        if (typeof options.ORDER !== 'string')
+            return null;
+
+        if (options.FORM !== 'TABLE')
+            return null;
+
+        const orderMatches = options.ORDER.match(keyRegex);
+
+        if (orderMatches === null)
+            return null;
+
+        const missing: string[] = options.COLUMNS.reduce((acc: string[], item: string) => {
+            const matches = item.match(keyRegex);
+
+            if (matches === null || acc === null)
+                return null;
+
+            if (!this.dataSet.has(matches[1]))
+                acc.push(matches[1]);
+
+            return acc;
+        }, []);
+
+        if (!this.dataSet.has(orderMatches[1]))
+            missing.push(orderMatches[1]);
+
+        return missing;
     }
 
     performQuery(query: QueryRequest): Promise <InsightResponse> {
         return new Promise<InsightResponse>((fulfill, reject) => {
-            // check some invariants
-            if (query.OPTIONS.COLUMNS.indexOf(query.OPTIONS.ORDER) === -1) {
-                // invalid query
+            if (query === null || isUndefined(query)) {
                 reject({
                     code: 400,
                     body: {
-                        error: "ORDER was not in COLUMNS"
+                        error: "Malformed query"
                     }
                 })
             }
 
-            if (query.OPTIONS.FORM != 'TABLE') {
-                // invalid query
+            const optionsMissing = this.verifyOptions(query.OPTIONS);
+            const whereMissing = this.verifyQuery(query.WHERE);
+
+            if (optionsMissing === null || whereMissing === null)
+                // malformed query
                 reject({
                     code: 400,
                     body: {
-                        error: "FORM was not TABLE"
+                        error: "Malformed query"
                     }
-                })
-            }
+                });
 
-            // check that all the columns we're using start with courses_
-            const ids = query.OPTIONS.COLUMNS.map(column => {
-                const matches = column.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
+            const remainingMissing = whereMissing.filter(item => whereMissing.indexOf(item) === -1);
 
-                if (matches === null)
-                    reject({
-                        code: 400,
-                        body: {
-                            error: "COLUMNS contained malformed key"
-                        }
-                    });
+            const missing = [...optionsMissing, ...remainingMissing];
 
-                return matches[1];
-            });
-
-            let missing;
-
-            try {
-                missing = query.OPTIONS.COLUMNS.filter(column => !this.verifyHasKey(column))
-                    .map(missing => missing.substr(0, missing.indexOf('_')));
-            } catch (e) {
-                reject({
-                    code: 400,
-                    body: {
-                        error: "Malformed key"
-                    }
-                })
-            }
-
-            // TODO crawl the query once to collect all of these too
             if (missing.length > 0) {
                 // 424, missing dataSets
                 reject({
@@ -282,26 +328,10 @@ export default class InsightFacade implements IInsightFacade {
                 });
             }
 
-            let queryList : any [] = [];
-            // for now, we only support the courses dataset
-            try {
-                Object.keys(this.dataSet).forEach((key: string) => {
-                    this.dataSet[key].forEach((value2: any) => {
-                        if (this.compareQuery(query, value2)) {
-                            queryList.push(value2);
-                        }
-                    });
-                });
-            } catch (e) {
-                reject({
-                    code: 400,
-                    body: {
-                        error: "Malformed query"
-                    }
-                })
-            }
+            const queryList: any[] = this.dataSet.get('courses').filter(
+                (item: any) => this.compareQuery(query, item));
 
-            queryList.sort((item1 ,item2) => {
+            queryList.sort((item1, item2) => {
                 let item1value = item1[query.OPTIONS.ORDER];
                 let item2value = item2[query.OPTIONS.ORDER];
                 if (item1value < item2value) {
@@ -314,18 +344,21 @@ export default class InsightFacade implements IInsightFacade {
                     return 0;
                 }
             });
-            queryList.forEach((value) => {
-                for (let key of Object.keys(value)) {
-                    if(query.OPTIONS.COLUMNS.indexOf(key) === -1)  {
-                        delete value[key];
-                    }
-                }
+
+            const rendered = queryList.map(item => {
+                const newItem: any = {};
+
+                for (let column of query.OPTIONS.COLUMNS)
+                    newItem[column] = item[column];
+
+                return newItem;
             });
+
             fulfill({
                 code: 200,
                 body: {
                     render: 'TABLE',
-                    result: queryList
+                    result: rendered
                 }
             });
 

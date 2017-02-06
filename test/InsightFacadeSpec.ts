@@ -55,13 +55,15 @@ describe("InsightFacade.addDataset", () => {
 
     it('should cache a dataset and load the data', function() {
         this.timeout(10000);
+        InsightFacade.resetCache();
+        insightFacade = new InsightFacade(true);
         return insightFacade.addDataset("courses", content).then((response) => {
             expect(response).to.deep.eq({
                 code: 204,
                 body: {}
             });
 
-            insightFacade = new InsightFacade();
+            insightFacade = new InsightFacade(true);
             return insightFacade.addDataset("courses", content);
         }).then((response) => {
             expect(response).to.deep.eq({
@@ -90,7 +92,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet["courses"] = [];
+        insightFacade.dataSet.set('courses', []);
     });
 
     afterEach(() => {
@@ -231,7 +233,7 @@ describe("InsightFacade.performQuery integration tests", () => {
     it('should return the correct reuslt for an instructor', () => {
         return insightFacade.performQuery({
             "WHERE":{
-                "EQ":{
+                "IS":{
                     "courses_instructor": "smulders, dave"
                 }
             },
@@ -294,7 +296,7 @@ describe("InsightFacade.performQuery integration tests", () => {
                         }
                     },
                     {
-                        "EQ":{
+                        "IS":{
                             "courses_dept": "biol"
                         }
                     }
@@ -400,7 +402,7 @@ describe("InsightFacade.performQuery", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet["courses"] = [
+        insightFacade.dataSet.set('courses', [
             {
                 courses_title: "hong kong cinema",
                 courses_uuid: 39426,
@@ -445,7 +447,7 @@ describe("InsightFacade.performQuery", () => {
                 courses_avg: 90.5,
                 courses_dept: "asia"
             }
-        ];
+        ]);
     });
     afterEach(() => {
         insightFacade = null;
@@ -709,7 +711,7 @@ describe("InsightFacade.performQuery", () => {
         });
     });
 
-    it('should produce all the data for an empty query', () => {
+    it('should fail for an empty query', () => {
         return insightFacade.performQuery({
                 WHERE: {},
                 OPTIONS: {
@@ -722,16 +724,12 @@ describe("InsightFacade.performQuery", () => {
                 }
             }
         ).then((response) => {
-            expect(response).to.deep.eq({
-                code: 200,
+            throw new Error("Should not have produce response");
+        }, err => {
+            expect(err).to.deep.eq({
+                code: 400,
                 body: {
-                    render: 'TABLE',
-                    result:  [
-                        {courses_dept: "asia", courses_avg: 71.18},
-                        {courses_dept: "asia", courses_avg: 71.18},
-                        {courses_dept: "asia", courses_avg: 90.5},
-                        {courses_dept: "asia", courses_avg: 98.5},
-                    ]
+                    error: "Malformed query"
                 }
             });
         });
@@ -785,7 +783,7 @@ describe("InsightFacade.performQuery", () => {
             expect(err).to.deep.equal({
                 code: 400,
                 body: {
-                    error: "ORDER was not in COLUMNS"
+                    error: "Malformed query"
                 }
             });
         });
@@ -793,7 +791,11 @@ describe("InsightFacade.performQuery", () => {
 
     it('should return missing IDs if columns include non-courses ids', () => {
         return insightFacade.performQuery({
-                WHERE: {},
+                WHERE: {
+                    "IS": {
+                        "courses_dept": "asia"
+                    }
+                },
                 OPTIONS: {
                     COLUMNS: [
                         "courses_dept",
@@ -836,7 +838,7 @@ describe("InsightFacade.performQuery", () => {
             expect(err).to.deep.equal({
                 code: 400,
                 body: {
-                    error: "COLUMNS contained malformed key"
+                    error: "Malformed query"
                 }
             });
         });
@@ -859,7 +861,7 @@ describe("InsightFacade.performQuery", () => {
             expect(err).to.deep.equal({
                 code: 400,
                 body: {
-                    error: "FORM was not TABLE"
+                    error: "Malformed query"
                 }
             });
         });
