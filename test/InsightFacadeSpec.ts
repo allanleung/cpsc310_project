@@ -58,20 +58,18 @@ describe("InsightFacade.addDataset", () => {
         });
     });
 
-    it('should fail to add an invalid id', function() {
-        this.timeout(10000);
-        return insightFacade.addDataset("instructors", content).then((response) => {
-            throw new Error('there should not be a response');
-        }).catch((err) => {
+    it('should fail to add an invalid dataset', () => {
+        return insightFacade.addDataset("courses", null).then(response => {
+            throw new Error("Should not have gotten response: " + response);
+        }, err => {
             expect(err).to.deep.eq({
                 code: 400,
                 body: {
-                    error: {}
+                    error: "Error loading zipfile"
                 }
             });
-        });
-    });
-
+        })
+    })
 });
 
 describe("InsightFacade.removeDataset", () => {
@@ -650,7 +648,7 @@ describe("InsightFacade.performQuery", () => {
         });
     });
 
-    it('should ignore malformed columns', () => {
+    it('should fail on malformed columns', () => {
         return insightFacade.performQuery({
                 WHERE: {},
                 OPTIONS: {
@@ -667,9 +665,32 @@ describe("InsightFacade.performQuery", () => {
             throw new Error("Test should have failed: " + response);
         }, (err) => {
             expect(err).to.deep.equal({
-                code: 424,
+                code: 400,
                 body: {
-                    missing: ["fake"]
+                    error: "COLUMNS contained malformed key"
+                }
+            });
+        });
+    });
+
+    it('should fail if FORM is not TABLE', () => {
+        return insightFacade.performQuery({
+                WHERE: {},
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_avg"
+                    ],
+                    ORDER: "courses_avg",
+                    FORM: "OEU",
+                }
+            }
+        ).then((response) => {
+            throw new Error("Test should have failed: " + response);
+        }, (err) => {
+            expect(err).to.deep.equal({
+                code: 400,
+                body: {
+                    error: "FORM was not TABLE"
                 }
             });
         });
