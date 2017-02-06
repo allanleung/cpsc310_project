@@ -256,8 +256,8 @@ describe("InsightFacade.performQuery integration tests", () => {
             }
         }).then(response => {
             expect(response.code).to.equal(200);
-            expect(response.body["result"]).to.not.be.empty;
-            for (var entry of response.body["result"]) {
+            expect(response.body.result).to.not.be.empty;
+            for (let entry of response.body["result"]) {
                 expect(entry.courses_instructor).to.equal('smulders, dave');
             }
         });

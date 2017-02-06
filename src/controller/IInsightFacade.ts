@@ -6,7 +6,7 @@
 
 export interface InsightResponse {
     code: number;
-    body: {}; // the actual response
+    body: any; // the actual response
 }
 
 export interface QueryOptions {
