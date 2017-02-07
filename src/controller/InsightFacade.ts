@@ -256,6 +256,10 @@ export default class InsightFacade implements IInsightFacade {
                 key = Object.keys(query["IS"])[0];
                 let value: string = query["IS"][key];
 
+                if (value === '*' || value === '**')
+                    // match everything
+                    return true;
+
                 if (value.startsWith("*") && value.endsWith("*")) {
                     const searchString = value.substr(1, value.length - 2);
                     return oneItem[key].indexOf(searchString) !== -1;
