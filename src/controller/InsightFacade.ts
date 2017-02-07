@@ -311,22 +311,19 @@ export default class InsightFacade implements IInsightFacade {
         }, []);
     }
 
-    validateTopLevelQuery(query: QueryRequest): boolean {
+    static validateTopLevelQuery(query: QueryRequest): boolean {
         if (query === null || isUndefined(query))
             return false;
 
         if (query.OPTIONS === null || isUndefined(query.OPTIONS))
             return false;
 
-        if (query.WHERE === null || isUndefined(query.WHERE))
-            return false;
-
-        return true;
+        return !(query.WHERE === null || isUndefined(query.WHERE));
     }
 
     performQuery(query: QueryRequest): Promise <InsightResponse> {
         return new Promise<InsightResponse>((fulfill, reject) => {
-            if (!this.validateTopLevelQuery(query)) {
+            if (!InsightFacade.validateTopLevelQuery(query)) {
                 reject({
                     code: 400,
                     body: {
