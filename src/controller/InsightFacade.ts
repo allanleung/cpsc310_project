@@ -282,19 +282,21 @@ export default class InsightFacade implements IInsightFacade {
         if (options.COLUMNS.length < 1)
             return null;
 
-        if (typeof options.ORDER !== 'string')
-            return null;
-
         if (options.FORM !== 'TABLE')
             return null;
 
-        const orderMatches = options.ORDER.match(keyRegex);
+        if (options.ORDER !== undefined && options.ORDER !== null) {
+            if (typeof options.ORDER !== 'string')
+                return null;
 
-        if (orderMatches === null)
-            return null;
+            const orderMatches = options.ORDER.match(keyRegex);
 
-        if (options.COLUMNS.indexOf(options.ORDER) === -1)
-            return null;
+            if (orderMatches === null)
+                return null;
+
+            if (options.COLUMNS.indexOf(options.ORDER) === -1)
+                return null;
+        }
 
         return options.COLUMNS.reduce((acc: string[], item: string) => {
             const matches = item.match(keyRegex);

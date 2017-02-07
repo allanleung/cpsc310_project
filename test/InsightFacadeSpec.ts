@@ -6054,30 +6054,6 @@ describe("InsightFacade.performQuery", () => {
         }))
     });
 
-    it('should fail when ORDER is not an array', () => {
-        return insightFacade.performQuery({
-            WHERE: {
-                IS: {
-                    "courses_id": "325"
-                }
-            },
-            OPTIONS: {
-                COLUMNS: [
-                    "courses_avg",
-                ],
-                ORDER: null,
-                FORM: "TABLE"
-            }
-        }).then(() => {
-            throw new Error("Should not have received response");
-        }, err => expect(err).to.deep.eq({
-            code: 400,
-            body: {
-                error: "Malformed query"
-            }
-        }))
-    });
-
     it('should fail when COLUMNS is empty', () => {
         return insightFacade.performQuery({
             WHERE: {
@@ -6499,5 +6475,31 @@ describe("InsightFacade.performQuery", () => {
                 missing: ["fake", "fake"]
             }
         }))
-    })
+    });
+
+    it('should return a correct result when not given a sorting order', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    courses_id: "315"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                FORM: "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                render: 'TABLE',
+                result: [
+                    {courses_dept: "asia", courses_id: "315", courses_avg: 98.5}
+                ]
+            }
+        }))
+    });
 });

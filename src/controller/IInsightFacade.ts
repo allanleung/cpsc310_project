@@ -11,7 +11,7 @@ export interface InsightResponse {
 
 export interface QueryOptions {
     COLUMNS: string[];
-    ORDER: string;
+    ORDER?: string;
     FORM: string;
 }
 
