@@ -30,51 +30,9 @@ export default class InsightFacade implements IInsightFacade {
     public addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
             new JSZip().loadAsync(content, {base64: true})
-                .then(zip => {
-                    const files: Promise<any[]>[] = [];
-
-                    let statusCode = 204;
-                    if (this.dataSet.hasDataset(id)) {
-                        statusCode = 201
-                    }
-
-                    zip.forEach((path: string, file: JSZipObject) => {
-                        if (file.dir == true) {
-                            return;
-                        }
-
-                        files.push(file.async('string').then((data) => {
-                            return JSON.parse(data).result.map((entry: any) => {
-                                return {
-                                    courses_dept: entry.Subject,
-                                    courses_id: entry.Course,
-                                    courses_avg: entry.Avg,
-                                    courses_instructor: entry.Professor,
-                                    courses_title: entry.Title,
-                                    courses_pass: entry.Pass,
-                                    courses_fail: entry.Fail,
-                                    courses_audit: entry.Audit,
-                                    courses_uuid: entry.id
-                                };
-                            });
-                        }));
-                    });
-
-                    return Promise.all(files).then(data => {
-                        const allItems: any[] = [];
-
-                        for (let item of data) {
-                            allItems.push(...item);
-                        }
-
-                        this.dataSet.addDataset(id, allItems);
-
-                        resolve({
-                            code: statusCode,
-                            body: {}
-                        })
-                    });
-                })
+                .then(zip => this.processZipFile(id, zip).then(response => {
+                    resolve(response);
+                }))
                 .catch(() => {
                     reject({
                         code: 400,
@@ -103,6 +61,52 @@ export default class InsightFacade implements IInsightFacade {
                 code: 204,
                 body: {}
             });
+        });
+    }
+
+    private processZipFile(id: string, zip: JSZip): Promise<InsightResponse> {
+        const files: Promise<any[]>[] = [];
+
+        let statusCode = 204;
+        if (this.dataSet.hasDataset(id)) {
+            statusCode = 201
+        }
+
+        zip.forEach((path: string, file: JSZipObject) => {
+            if (file.dir == true) {
+                return;
+            }
+
+            files.push(file.async('string').then((data) => {
+                return JSON.parse(data).result.map((entry: any) => {
+                    return {
+                        courses_dept: entry.Subject,
+                        courses_id: entry.Course,
+                        courses_avg: entry.Avg,
+                        courses_instructor: entry.Professor,
+                        courses_title: entry.Title,
+                        courses_pass: entry.Pass,
+                        courses_fail: entry.Fail,
+                        courses_audit: entry.Audit,
+                        courses_uuid: entry.id
+                    };
+                });
+            }));
+        });
+
+        return Promise.all(files).then(data => {
+            const allItems: any[] = [];
+
+            for (let item of data) {
+                allItems.push(...item);
+            }
+
+            this.dataSet.addDataset(id, allItems);
+
+            return {
+                code: statusCode,
+                body: {}
+            };
         });
     }
 
