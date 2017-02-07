@@ -26,6 +26,7 @@ const keyTypes: { [key: string]: string } = {
     courses_uuid: 'string'
 };
 
+// TODO split up the parse and execute phases and data structures
 export default class InsightFacade implements IInsightFacade {
     dataSet: Map<string, any[]>;
     cache: boolean;
