@@ -14,6 +14,18 @@ const cachePath = __dirname + '/data.json';
 
 const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
 
+const keyTypes: { [key: string]: string } = {
+    courses_dept: 'string',
+    courses_id: 'string',
+    courses_avg: 'number',
+    courses_instructor: 'string',
+    courses_title: 'string',
+    courses_pass: 'number',
+    courses_fail: 'number',
+    courses_audit: 'number',
+    courses_uuid: 'string'
+};
+
 export default class InsightFacade implements IInsightFacade {
     dataSet: Map<string, any[]>;
     cache: boolean;
@@ -154,8 +166,6 @@ export default class InsightFacade implements IInsightFacade {
 
         const filter = Object.keys(query)[0];
 
-        const missing: string[] = [];
-
         switch (filter) {
             case "OR":
             case "AND":
@@ -174,7 +184,7 @@ export default class InsightFacade implements IInsightFacade {
                     acc.push(...innerResult);
 
                     return acc;
-                }, missing);
+                }, []);
             case "NOT":
                 return this.verifyQuery(query[filter]);
             case "LT":
@@ -199,19 +209,22 @@ export default class InsightFacade implements IInsightFacade {
                 if (matches === null)
                     return null;
 
-                if (!this.dataSet.has(matches[1]))
-                    missing.push(matches[1]); // missing dataset
+                if (!this.dataSet.has(matches[1])) {
+                    return [matches[1]]; // missing dataset
+                }
 
                 if (filter === 'IS') {
-                    if (typeof value[key] === 'string')
-                        return missing;
-                    else
+                    if (keyTypes[key] !== 'string' || typeof value[key] !== 'string') {
                         return null;
+                    } else {
+                        return [];
+                    }
                 } else { // EQ, GT, LT
-                    if (typeof value[key] === 'number')
-                        return missing;
-                    else
+                    if (keyTypes[key] !== 'number' || typeof value[key] !== 'number') {
                         return null;
+                    } else {
+                        return [];
+                    }
                 }
         }
     }
