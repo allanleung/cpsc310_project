@@ -4,7 +4,6 @@ import {
     IInsightFacade,
     InsightResponse,
     Filter,
-    cachePath,
     isOrFilter,
     isAndFilter,
     isLtFilter,
@@ -14,47 +13,19 @@ import {
     isIsFilter
 } from "./IInsightFacade";
 import * as JSZip from "jszip";
-import Log from "../Util";
 import QueryRequest from "./QueryRequest";
+import DataController from "./DataController";
 /**
  * This is the main programmatic entry point for the project.
  */
 const fs = require('fs');
 
 export default class InsightFacade implements IInsightFacade {
-    dataSet: Map<string, any[]>;
-    cache: boolean;
+    public dataSet: DataController;
 
     constructor(cache = false) {
-        Log.trace('InsightFacadeImpl::init()');
-        this.dataSet = new Map<string, any[]>();
-        this.cache = cache;
-
-        if (this.cache && fs.existsSync(cachePath)) {
-            Log.trace('Loading cached data');
-            let cacheData: any[] = JSON.parse(fs.readFileSync(cachePath));
-            this.dataSet = new Map<string, any[]>(cacheData);
-        }
-        // this.dataSet = new Map<string, any>();
+        this.dataSet = new DataController(cache);
     }
-
-    public static resetCache() {
-        if (fs.existsSync(cachePath)) {
-            fs.unlinkSync(cachePath);
-        }
-    }
-
-    /**
-     courses_dept: string; The department that offered the course.
-     courses_id: string; The course number (will be treated as a string (e.g., 499b)).
-     courses_avg: number; The average of the course offering.
-     courses_instructor: string; The instructor teaching the course offering.
-     courses_title: string; The name of the course.
-     courses_pass: number; The number of students that passed the course offering.
-     courses_fail: number; The number of students that failed the course offering.
-     courses_audit: number; The number of students that audited the course offering.
-     courses_uuid: string; The unique id of a course offering
-     */
 
     public addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
@@ -63,7 +34,7 @@ export default class InsightFacade implements IInsightFacade {
                     const files: Promise<any[]>[] = [];
 
                     let statusCode = 204;
-                    if (this.dataSet.has(id)) {
+                    if (this.dataSet.hasDataset(id)) {
                         statusCode = 201
                     }
 
@@ -96,17 +67,7 @@ export default class InsightFacade implements IInsightFacade {
                             allItems.push(...item);
                         }
 
-                        this.dataSet.set(id, allItems);
-
-                        if (this.cache) {
-                            const entries: any[] = [];
-
-                            this.dataSet.forEach((value, key) => {
-                                entries.push([key, value]);
-                            });
-
-                            fs.writeFileSync(cachePath, JSON.stringify(entries));
-                        }
+                        this.dataSet.addDataset(id, allItems);
 
                         resolve({
                             code: statusCode,
@@ -127,7 +88,7 @@ export default class InsightFacade implements IInsightFacade {
 
     public removeDataset(id: string): Promise<InsightResponse> {
         return new Promise((fulfill, reject) => {
-            if (!this.dataSet.has(id)) {
+            if (!this.dataSet.hasDataset(id)) {
                 reject({
                     code: 404,
                     body: {
@@ -136,7 +97,7 @@ export default class InsightFacade implements IInsightFacade {
                 });
             }
 
-            delete this.dataSet.delete(id);
+            this.dataSet.removeDataset(id);
 
             fulfill({
                 code: 204,
@@ -210,7 +171,7 @@ export default class InsightFacade implements IInsightFacade {
 
             const parsedQuery = <QueryRequest>parsingResult;
 
-            const queryList: any[] = this.dataSet.get('courses').filter(
+            const queryList: any[] = this.dataSet.getDataset('courses').filter(
                 (item: any) => this.performFilter(parsedQuery.WHERE, item));
 
             if (typeof parsedQuery.OPTIONS.ORDER === 'string') {

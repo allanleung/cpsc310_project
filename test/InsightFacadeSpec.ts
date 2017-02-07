@@ -8,6 +8,7 @@ import InsightFacade from "../src/controller/InsightFacade";
 import {expect} from 'chai';
 import * as fs from 'fs';
 import Log from '../src/Util';
+import DataController from "../src/controller/DataController";
 
 describe("Log", () => {
     it('should not fail when logging', () => {
@@ -66,7 +67,7 @@ describe("InsightFacade.addDataset", () => {
 
     it('should cache a dataset and load the data', function() {
         this.timeout(10000);
-        InsightFacade.resetCache();
+        DataController.resetCache();
         insightFacade = new InsightFacade(true);
         return insightFacade.addDataset("courses", content).then((response) => {
             expect(response).to.deep.eq({
@@ -103,7 +104,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.set('courses', []);
+        insightFacade.dataSet.addDataset('courses', []);
     });
 
     afterEach(() => {
@@ -5231,7 +5232,7 @@ describe("InsightFacade.performQuery", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.set('courses', [
+        insightFacade.dataSet.addDataset('courses', [
             {
                 courses_title: "hong kong cinema",
                 courses_uuid: 39426,
