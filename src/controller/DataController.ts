@@ -27,14 +27,8 @@ export default class DataController {
         }
     }
 
-    private writeCache() {
-        const entries: any[] = [];
-
-        this.dataSet.forEach((value, key) => {
-            entries.push([key, value]);
-        });
-
-        fs.writeFileSync(cachePath, JSON.stringify(entries));
+    public forEach(callback: (value: any[], key: string) => void) {
+        this.dataSet.forEach(callback);
     }
 
     public addDataset(id: string, content: any[]) {
@@ -53,11 +47,17 @@ export default class DataController {
         }
     }
 
-    public getDataset(id: string): any[] {
-        return this.dataSet.get(id);
-    }
-
     public hasDataset(id: string): boolean {
         return this.dataSet.has(id);
+    }
+
+    private writeCache() {
+        const entries: any[] = [];
+
+        this.dataSet.forEach((value, key) => {
+            entries.push([key, value]);
+        });
+
+        fs.writeFileSync(cachePath, JSON.stringify(entries));
     }
 }

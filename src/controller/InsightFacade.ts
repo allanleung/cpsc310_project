@@ -10,7 +10,7 @@ import {
     isGtFilter,
     isEqFilter,
     isNotFilter,
-    isIsFilter
+    isIsFilter, dataSetDefinitions
 } from "./IInsightFacade";
 import * as JSZip from "jszip";
 import QueryRequest from "./QueryRequest";
@@ -82,8 +82,11 @@ export default class InsightFacade implements IInsightFacade {
 
             const parsedQuery = <QueryRequest>parsingResult;
 
-            const queryList: any[] = this.dataSet.getDataset('courses').filter(
-                (item: any) => this.performFilter(parsedQuery.WHERE, item));
+            const queryList: any[] = [];
+
+            this.dataSet.forEach(dataSet => {
+                queryList.push(...dataSet.filter(item => this.performFilter(parsedQuery.WHERE, item)));
+            });
 
             if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
                 queryList.sort((item1, item2) => {
@@ -135,19 +138,7 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             files.push(file.async('string').then((data) => {
-                return JSON.parse(data).result.map((entry: any) => {
-                    return {
-                        courses_dept: entry.Subject,
-                        courses_id: entry.Course,
-                        courses_avg: entry.Avg,
-                        courses_instructor: entry.Professor,
-                        courses_title: entry.Title,
-                        courses_pass: entry.Pass,
-                        courses_fail: entry.Fail,
-                        courses_audit: entry.Audit,
-                        courses_uuid: entry.id
-                    };
-                });
+                return JSON.parse(data).result.map(dataSetDefinitions[id].transform);
             }));
         });
 
@@ -178,18 +169,21 @@ export default class InsightFacade implements IInsightFacade {
             }, true);
         } else if (isLtFilter(filter)) {
             const key = Object.keys(filter.LT)[0];
-            return oneItem[key] < filter.LT[key];
+            return key in oneItem && oneItem[key] < filter.LT[key];
         } else if (isGtFilter(filter)) {
             const key = Object.keys(filter.GT)[0];
-            return oneItem[key] > filter.GT[key];
+            return key in oneItem && oneItem[key] > filter.GT[key];
         } else if (isEqFilter(filter)) {
             const key = Object.keys(filter.EQ)[0];
-            return oneItem[key] === filter.EQ[key];
+            return key in oneItem && oneItem[key] === filter.EQ[key];
         } else if (isNotFilter(filter)) {
             return !this.performFilter(filter.NOT, oneItem);
         } else if (isIsFilter(filter)) {
             const key = Object.keys(filter.IS)[0];
             let value = filter.IS[key];
+
+            if (!(key in oneItem))
+                return false;
 
             if (value === '*' || value === '**')
             // match everything

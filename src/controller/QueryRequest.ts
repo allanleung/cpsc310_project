@@ -37,7 +37,7 @@ export default class QueryRequest implements Query {
         for (let dataSet of [...optionsDataSets, ...filterDataSets]) {
             if (!(dataSet in dataSetDefinitions)) {
                 missing.push(dataSet);
-            } else if (!this.parseFilter(query.WHERE, dataSet, dataSetDefinitions[dataSet])) {
+            } else if (!this.parseFilter(query.WHERE, dataSet, dataSetDefinitions[dataSet].keys)) {
                 return null;
             }
         }
