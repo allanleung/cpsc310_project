@@ -311,9 +311,22 @@ export default class InsightFacade implements IInsightFacade {
         }, []);
     }
 
+    validateTopLevelQuery(query: QueryRequest): boolean {
+        if (query === null || isUndefined(query))
+            return false;
+
+        if (query.OPTIONS === null || isUndefined(query.OPTIONS))
+            return false;
+
+        if (query.WHERE === null || isUndefined(query.WHERE))
+            return false;
+
+        return true;
+    }
+
     performQuery(query: QueryRequest): Promise <InsightResponse> {
         return new Promise<InsightResponse>((fulfill, reject) => {
-            if (query === null || isUndefined(query)) {
+            if (!this.validateTopLevelQuery(query)) {
                 reject({
                     code: 400,
                     body: {

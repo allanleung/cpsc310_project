@@ -6502,4 +6502,41 @@ describe("InsightFacade.performQuery", () => {
             }
         }))
     });
+
+    it('should fail when given a query without a WHERE', () => {
+        return insightFacade.performQuery({
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should fail when given a query without an OPTIONS', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    courses_id: "315"
+                }
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: "Malformed query"
+            }
+        }))
+    });
 });

@@ -10,14 +10,14 @@ export interface InsightResponse {
 }
 
 export interface QueryOptions {
-    COLUMNS: string[];
+    COLUMNS?: string[];
     ORDER?: string;
-    FORM: string;
+    FORM?: string;
 }
 
 export interface QueryRequest {
-    WHERE: any;
-    OPTIONS: QueryOptions;
+    WHERE?: any;
+    OPTIONS?: QueryOptions;
     // you can define your own structure that complies with the EBNF here
 }
 
