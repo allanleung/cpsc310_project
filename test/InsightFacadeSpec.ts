@@ -5182,6 +5182,28 @@ describe("InsightFacade.Integration.performQuery", () => {
             }
         }));
     });
+
+    it('should produce the correct partial list', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "OR": [
+                    {"IS":{"courses_instructor": "*pamela*"}}
+                ]
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_instructor",
+                    "courses_avg"
+                ],
+                "ORDER":"courses_avg",
+                "FORM":"TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {"render":"TABLE","result":[{"courses_dept":"math","courses_instructor":"desaulniers, shawn;leung, fok-shuen;sargent, pamela","courses_avg":56.43},{"courses_dept":"math","courses_instructor":"leung, fok-shuen;sargent, pamela;tba","courses_avg":58.42},{"courses_dept":"math","courses_instructor":"leung, fok-shuen;sargent, pamela;wong, tom","courses_avg":62.47},{"courses_dept":"math","courses_instructor":"leung, fok-shuen;sargent, pamela;tba","courses_avg":63.03},{"courses_dept":"biol","courses_instructor":"couch, brett;kalas, pamela","courses_avg":63.13},{"courses_dept":"geob","courses_instructor":"gaitan, carlos;o, pamela","courses_avg":65.19},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":66.2},{"courses_dept":"geob","courses_instructor":"donner, simon;o, pamela","courses_avg":67.08},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":68.02},{"courses_dept":"geob","courses_instructor":"gaitan, carlos;o, pamela","courses_avg":68.05},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":68.28},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":68.28},{"courses_dept":"geob","courses_instructor":"donner, simon;o, pamela","courses_avg":70.78},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":72.1},{"courses_dept":"biol","courses_instructor":"kalas, pamela;leander, celeste","courses_avg":73.47},{"courses_dept":"engl","courses_instructor":"dalziel, pamela","courses_avg":73.5},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":73.7},{"courses_dept":"engl","courses_instructor":"dalziel, pamela","courses_avg":73.96},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":75.17},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":76.39},{"courses_dept":"engl","courses_instructor":"dalziel, pamela","courses_avg":76.47},{"courses_dept":"apsc","courses_instructor":"berndt, annette;jaeger, carol patricia;rogalski, pamela","courses_avg":76.58},{"courses_dept":"medg","courses_instructor":"hoodless, pamela;juriloff, diana;robinson, wendy","courses_avg":76.68},{"courses_dept":"biol","courses_instructor":"kalas, pamela;klenz, jennifer","courses_avg":77.74},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":78.87},{"courses_dept":"biol","courses_instructor":"kalas, pamela;klenz, jennifer","courses_avg":79.18},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":79.29},{"courses_dept":"apsc","courses_instructor":"rogalski, pamela","courses_avg":79.66},{"courses_dept":"medg","courses_instructor":"hoodless, pamela;lefebvre, louis;van raamsdonk, catherine","courses_avg":80.18},{"courses_dept":"biol","courses_instructor":"kalas, pamela;nomme, kathy margaret;sun, chin","courses_avg":80.34},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":80.48},{"courses_dept":"nurs","courses_instructor":"ratner, pamela","courses_avg":80.78},{"courses_dept":"nurs","courses_instructor":"ratner, pamela","courses_avg":80.8},{"courses_dept":"biol","courses_instructor":"kalas, pamela","courses_avg":81.32},{"courses_dept":"biol","courses_instructor":"couch, brett;germano, bernardita;kalas, pamela;kopp, christopher;moussavi, maryam;nomme, kathy margaret;norman, lynn;sun, chin","courses_avg":81.42},{"courses_dept":"medg","courses_instructor":"hoodless, pamela;juriloff, diana;lefebvre, louis;robinson, wendy","courses_avg":81.53},{"courses_dept":"medg","courses_instructor":"hoodless, pamela;juriloff, diana;lefebvre, louis;robinson, wendy","courses_avg":81.62},{"courses_dept":"engl","courses_instructor":"dalziel, pamela","courses_avg":82},{"courses_dept":"medg","courses_instructor":"hoodless, pamela;juriloff, diana;lefebvre, louis;robinson, wendy","courses_avg":83.07},{"courses_dept":"apsc","courses_instructor":"rogalski, pamela","courses_avg":83.28},{"courses_dept":"nurs","courses_instructor":"ratner, pamela","courses_avg":85.56},{"courses_dept":"nurs","courses_instructor":"ratner, pamela;varcoe, colleen","courses_avg":86.92},{"courses_dept":"nurs","courses_instructor":"ratner, pamela;varcoe, colleen","courses_avg":87.13},{"courses_dept":"nurs","courses_instructor":"ratner, pamela;varcoe, colleen","courses_avg":87.48},{"courses_dept":"cnps","courses_instructor":"hirakata, pamela","courses_avg":87.55}]}
+        }));
+    })
 });
 
 describe("InsightFacade.performQuery", () => {
@@ -6432,4 +6454,30 @@ describe("InsightFacade.performQuery", () => {
             }
         }))
     });
+
+    it('should produce the same two missing datasets when they are missing in both WHERE and COLUMNS', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "OR": [
+                    {"IS":{"fake_instructor": "*pamela*"}}
+                ]
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "fake_instructor",
+                    "courses_avg"
+                ],
+                "ORDER":"fake_instructor",
+                "FORM":"TABLE"
+            }
+        }).then(() => {
+            throw new Error("Should not have received response");
+        }, err => expect(err).to.deep.eq({
+            code: 424,
+            body: {
+                missing: ["fake", "fake"]
+            }
+        }))
+    })
 });

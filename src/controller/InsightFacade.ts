@@ -328,9 +328,7 @@ export default class InsightFacade implements IInsightFacade {
                     }
                 });
 
-            const remainingMissing = optionsMissing.filter(item => whereMissing.indexOf(item) === -1);
-
-            const missing = [...whereMissing, ...remainingMissing];
+            const missing = [...whereMissing, ...optionsMissing];
 
             if (missing.length > 0) {
                 // 424, missing dataSets
