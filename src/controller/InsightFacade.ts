@@ -248,10 +248,10 @@ export default class InsightFacade implements IInsightFacade {
                     return oneItem[key].indexOf(searchString) !== -1;
                 } else if (value.startsWith("*")) {
                     const searchString = value.substr(1);
-                    return oneItem[key].indexOf(searchString) + searchString.length === oneItem[key].length;
+                    return oneItem[key].endsWith(searchString);
                 } else if (value.endsWith("*")) {
-                    const searchString = value.substr(0, value.length - 1);
-                    return oneItem[key].indexOf(searchString) === 0;
+                    const searchString = value.substr(0, value.length - 2);
+                    return oneItem[key].startsWith(searchString);
                 } else {
                     return oneItem[key] === value;
                 }
@@ -276,7 +276,10 @@ export default class InsightFacade implements IInsightFacade {
         if (orderMatches === null)
             return null;
 
-        const missing: string[] = options.COLUMNS.reduce((acc: string[], item: string) => {
+        if (options.COLUMNS.indexOf(options.ORDER) === -1)
+            return null;
+
+        return options.COLUMNS.reduce((acc: string[], item: string) => {
             const matches = item.match(keyRegex);
 
             if (matches === null || acc === null)
@@ -287,11 +290,6 @@ export default class InsightFacade implements IInsightFacade {
 
             return acc;
         }, []);
-
-        if (!this.dataSet.has(orderMatches[1]))
-            missing.push(orderMatches[1]);
-
-        return missing;
     }
 
     performQuery(query: QueryRequest): Promise <InsightResponse> {
@@ -317,7 +315,7 @@ export default class InsightFacade implements IInsightFacade {
                     }
                 });
 
-            const remainingMissing = whereMissing.filter(item => whereMissing.indexOf(item) === -1);
+            const remainingMissing = whereMissing.filter(item => optionsMissing.indexOf(item) === -1);
 
             const missing = [...optionsMissing, ...remainingMissing];
 
