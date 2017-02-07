@@ -60,6 +60,67 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
+    public performQuery(query: any): Promise <InsightResponse> {
+        return new Promise<InsightResponse>((fulfill, reject) => {
+            const parsingResult = QueryRequest.parseQuery(query);
+
+            if (parsingResult === null) {
+                reject({
+                    code: 400,
+                    body: {
+                        error: "Malformed query"
+                    }
+                })
+            } else if (isArray(parsingResult)) {
+                reject({
+                    code: 424,
+                    body: {
+                        missing: parsingResult
+                    }
+                })
+            }
+
+            const parsedQuery = <QueryRequest>parsingResult;
+
+            const queryList: any[] = this.dataSet.getDataset('courses').filter(
+                (item: any) => this.performFilter(parsedQuery.WHERE, item));
+
+            if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
+                queryList.sort((item1, item2) => {
+                    let item1value = item1[parsedQuery.OPTIONS.ORDER];
+                    let item2value = item2[parsedQuery.OPTIONS.ORDER];
+                    if (item1value < item2value) {
+                        return -1;
+                    }
+                    else if (item1value > item2value) {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                });
+            }
+
+            const rendered = queryList.map(item => {
+                const newItem: any = {};
+
+                for (let column of parsedQuery.OPTIONS.COLUMNS)
+                    newItem[column] = item[column];
+
+                return newItem;
+            });
+
+            fulfill({
+                code: 200,
+                body: {
+                    render: 'TABLE',
+                    result: rendered
+                }
+            });
+
+        });
+    }
+
     private processZipFile(id: string, zip: JSZip): Promise<InsightResponse> {
         const files: Promise<any[]>[] = [];
 
@@ -147,66 +208,5 @@ export default class InsightFacade implements IInsightFacade {
                 return oneItem[key] === value;
             }
         }
-    }
-
-    public performQuery(query: any): Promise <InsightResponse> {
-        return new Promise<InsightResponse>((fulfill, reject) => {
-            const parsingResult = QueryRequest.parseQuery(query);
-
-            if (parsingResult === null) {
-                reject({
-                    code: 400,
-                    body: {
-                        error: "Malformed query"
-                    }
-                })
-            } else if (isArray(parsingResult)) {
-                reject({
-                    code: 424,
-                    body: {
-                        missing: parsingResult
-                    }
-                })
-            }
-
-            const parsedQuery = <QueryRequest>parsingResult;
-
-            const queryList: any[] = this.dataSet.getDataset('courses').filter(
-                (item: any) => this.performFilter(parsedQuery.WHERE, item));
-
-            if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
-                queryList.sort((item1, item2) => {
-                    let item1value = item1[parsedQuery.OPTIONS.ORDER];
-                    let item2value = item2[parsedQuery.OPTIONS.ORDER];
-                    if (item1value < item2value) {
-                        return -1;
-                    }
-                    else if (item1value > item2value) {
-                        return 1;
-                    }
-                    else {
-                        return 0;
-                    }
-                });
-            }
-
-            const rendered = queryList.map(item => {
-                const newItem: any = {};
-
-                for (let column of parsedQuery.OPTIONS.COLUMNS)
-                    newItem[column] = item[column];
-
-                return newItem;
-            });
-
-            fulfill({
-                code: 200,
-                body: {
-                    render: 'TABLE',
-                    result: rendered
-                }
-            });
-
-        });
     }
 }
