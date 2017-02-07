@@ -137,9 +137,7 @@ export default class InsightFacade implements IInsightFacade {
                 return;
             }
 
-            files.push(file.async('string').then((data) => {
-                return JSON.parse(data).result.map(dataSetDefinitions[id].transform);
-            }));
+            files.push(file.async('string').then(dataSetDefinitions[id].parseFile));
         });
 
         return Promise.all(files).then(data => {

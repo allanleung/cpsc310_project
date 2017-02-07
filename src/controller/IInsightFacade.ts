@@ -9,23 +9,27 @@ export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
 
 export const dataSetDefinitions: {
     [dataSet: string]: {
-        transform: (entry: any) => any,
-        keys: { [key: string]: string }
+        parseFile: (data: string) => any[],
+        keys: {
+            [key: string]: string
+        }
     }
 } = {
     courses: {
-        transform: (entry: any): any  => {
-            return {
-                courses_dept: entry.Subject,
-                courses_id: entry.Course,
-                courses_avg: entry.Avg,
-                courses_instructor: entry.Professor,
-                courses_title: entry.Title,
-                courses_pass: entry.Pass,
-                courses_fail: entry.Fail,
-                courses_audit: entry.Audit,
-                courses_uuid: entry.id
-            };
+        parseFile: data => {
+            return JSON.parse(data).result.map((entry: any) => {
+                return {
+                    courses_dept: entry.Subject,
+                    courses_id: entry.Course,
+                    courses_avg: entry.Avg,
+                    courses_instructor: entry.Professor,
+                    courses_title: entry.Title,
+                    courses_pass: entry.Pass,
+                    courses_fail: entry.Fail,
+                    courses_audit: entry.Audit,
+                    courses_uuid: entry.id
+                };
+            });
         },
         keys: {
             courses_dept: 'string',
