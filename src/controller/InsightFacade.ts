@@ -15,10 +15,6 @@ import {
 import * as JSZip from "jszip";
 import QueryRequest from "./QueryRequest";
 import DataController from "./DataController";
-/**
- * This is the main programmatic entry point for the project.
- */
-const fs = require('fs');
 
 export default class InsightFacade implements IInsightFacade {
     public dataSet: DataController;
