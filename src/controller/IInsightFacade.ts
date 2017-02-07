@@ -3,6 +3,23 @@
  * A class called InsightFacade, this should be in a file called InsightFacade.ts.
  * You should not change this interface at all or the test suite will not work.
  */
+export const cachePath = __dirname + '/data.json';
+
+export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
+
+export const dataSetDefinitions: { [dataSet: string]: { [key: string]: string } } = {
+    courses: {
+        courses_dept: 'string',
+        courses_id: 'string',
+        courses_avg: 'number',
+        courses_instructor: 'string',
+        courses_title: 'string',
+        courses_pass: 'number',
+        courses_fail: 'number',
+        courses_audit: 'number',
+        courses_uuid: 'string'
+    }
+};
 
 export interface InsightResponse {
     code: number;
@@ -10,15 +27,76 @@ export interface InsightResponse {
 }
 
 export interface QueryOptions {
-    COLUMNS?: string[];
-    ORDER?: string;
-    FORM?: string;
+    COLUMNS: string[];
+    ORDER: string;
+    FORM: string;
 }
 
-export interface QueryRequest {
-    WHERE?: any;
-    OPTIONS?: QueryOptions;
-    // you can define your own structure that complies with the EBNF here
+export interface Query {
+    WHERE: Filter;
+    OPTIONS: QueryOptions;
+}
+
+export interface IsFilter {
+    IS: {[key: string]: string;};
+}
+
+export type Comparator = {[key: string]: number};
+
+export interface LtFilter {
+    LT: Comparator;
+}
+
+export interface GtFilter {
+    GT: Comparator;
+}
+
+export interface EqFilter {
+    EQ: Comparator;
+}
+
+export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
+
+export type Logic = Filter[];
+
+export interface AndFilter {
+    AND: Logic;
+}
+
+export interface OrFilter {
+    OR: Logic;
+}
+
+export interface NotFilter {
+    NOT: Filter;
+}
+
+export function isIsFilter(item: Filter): item is IsFilter {
+    return (<IsFilter>item).IS !== undefined;
+}
+
+export function isGtFilter(item: Filter): item is GtFilter {
+    return (<GtFilter>item).GT !== undefined;
+}
+
+export function isLtFilter(item: Filter): item is LtFilter {
+    return (<LtFilter>item).LT !== undefined;
+}
+
+export function isEqFilter(item: Filter): item is EqFilter {
+    return (<EqFilter>item).EQ !== undefined;
+}
+
+export function isAndFilter(item: Filter): item is AndFilter {
+    return (<AndFilter>item).AND !== undefined;
+}
+
+export function isOrFilter(item: Filter): item is OrFilter {
+    return (<OrFilter>item).OR !== undefined;
+}
+
+export function isNotFilter(item: Filter): item is NotFilter {
+    return (<NotFilter>item).NOT !== undefined;
 }
 
 export interface IInsightFacade {
@@ -93,5 +171,5 @@ export interface IInsightFacade {
      * 424: the query failed because it depends on a resource that has not been PUT. The body should contain {"missing": ["id1", "id2"...]}.
      *
      */
-    performQuery(query: QueryRequest): Promise<InsightResponse>;
+    performQuery(query: any): Promise<InsightResponse>;
 }

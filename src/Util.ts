@@ -4,6 +4,7 @@
  * @param msg
  */
 /* tslint:disable:no-console */
+
 export default class Log {
 
     public static trace(msg: string) {
