@@ -27,6 +27,10 @@ const keyTypes: { [key: string]: string } = {
 };
 
 // TODO split up the parse and execute phases and data structures
+// Phase one: parse query and collect referenced datasets
+// Phase two: check for missing datasets
+// Phase three: parse again for each dataset, checking that the query format matches the dataset definition
+// Phase four: execute the query and return the results
 export default class InsightFacade implements IInsightFacade {
     dataSet: Map<string, any[]>;
     cache: boolean;
@@ -360,19 +364,21 @@ export default class InsightFacade implements IInsightFacade {
             const queryList: any[] = this.dataSet.get('courses').filter(
                 (item: any) => this.compareQuery(query, item));
 
-            queryList.sort((item1, item2) => {
-                let item1value = item1[query.OPTIONS.ORDER];
-                let item2value = item2[query.OPTIONS.ORDER];
-                if (item1value < item2value) {
-                    return -1;
-                }
-                else if (item1value > item2value) {
-                    return 1;
-                }
-                else {
-                    return 0;
-                }
-            });
+            if (typeof query.OPTIONS.ORDER === 'string') {
+                queryList.sort((item1, item2) => {
+                    let item1value = item1[query.OPTIONS.ORDER];
+                    let item2value = item2[query.OPTIONS.ORDER];
+                    if (item1value < item2value) {
+                        return -1;
+                    }
+                    else if (item1value > item2value) {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                });
+            }
 
             const rendered = queryList.map(item => {
                 const newItem: any = {};
