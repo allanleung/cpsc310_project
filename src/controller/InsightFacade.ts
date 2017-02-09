@@ -201,7 +201,7 @@ export default class InsightFacade implements IInsightFacade {
                 const searchString = value.substr(1);
                 return oneItem[key].endsWith(searchString);
             } else if (value.endsWith("*")) {
-                const searchString = value.substr(0, value.length - 2);
+                const searchString = value.substr(0, value.length - 1);
                 return oneItem[key].startsWith(searchString);
             } else {
                 return oneItem[key] === value;
