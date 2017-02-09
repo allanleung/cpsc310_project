@@ -245,15 +245,24 @@ describe("InsightFacade.Integration.performQuery", () => {
     it('should find all courses in a dept with a partial name', () => {
         return insightFacade.performQuery({
             "WHERE":{
-                "IS":{
-                    "courses_dept": "*psc"
-                }
+                "AND":[
+                    {
+                        "IS":{
+                            "courses_title": "*intro*"
+                        }
+                    },
+                    {
+                        "IS":{
+                            "courses_dept": "anth"
+                        }
+                    }
+                ]
             },
             "OPTIONS":{
                 "COLUMNS":[
                     "courses_dept",
-                    "courses_id",
-                    "courses_avg"
+                    "courses_title",
+                    "courses_id"
                 ],
                 "ORDER": "courses_dept",
                 "FORM":"TABLE"
@@ -262,7 +271,7 @@ describe("InsightFacade.Integration.performQuery", () => {
             expect(response.code).to.equal(200);
             expect(response.body.result).to.not.be.empty;
             for (let entry of response.body["result"]) {
-                expect(entry.courses_dept).to.contain('psc');
+                expect(entry.courses_title).to.contain('intro');
             }
         });
     });
@@ -359,8 +368,6 @@ describe("InsightFacade.Integration.performQuery", () => {
         });
     });
 
-
-
     it('should return the correct result for a simple query', () => {
         return insightFacade.performQuery({
             "WHERE":{
@@ -432,7 +439,6 @@ describe("InsightFacade.Integration.performQuery", () => {
                             { courses_dept: 'math', courses_avg: 99.78 } ] }})
         })
     });
-
 
     it('should work correctly', () => {
         return insightFacade.performQuery({
