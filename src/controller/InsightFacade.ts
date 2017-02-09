@@ -85,7 +85,7 @@ export default class InsightFacade implements IInsightFacade {
             const queryList: any[] = [];
 
             this.dataSet.forEach(dataSet => {
-                queryList.push(...dataSet.filter(item => this.performFilter(parsedQuery.WHERE, item)));
+                queryList.push(...dataSet.filter(item => InsightFacade.performFilter(parsedQuery.WHERE, item)));
             });
 
             if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
@@ -156,7 +156,14 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    private performFilter(filter: Filter, oneItem: any) : boolean {
+    /**
+     * Determines whether the given item matches the filter
+     *
+     * @param filter the filter to match against
+     * @param oneItem the item to match
+     * @returns {any} true if the item matches the filter, false otherwise
+     */
+    private static performFilter(filter: Filter, oneItem: any) : boolean {
         if (isOrFilter(filter)) {
             return filter.OR.reduce((acc: boolean, innerQuery: any) => {
                 return acc || this.performFilter(innerQuery, oneItem);

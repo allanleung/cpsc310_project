@@ -8,12 +8,10 @@ import * as fs from 'fs';
 import {cachePath} from "./IInsightFacade";
 
 export default class DataController {
-    private dataSet: Map<string, any[]>;
-    private cache: boolean;
+    private readonly dataSet: Map<string, any[]>;
 
-    constructor(cache = false) {
+    constructor(private readonly cache = false) {
         this.dataSet = new Map<string, any[]>();
-        this.cache = cache;
 
         if (this.cache && fs.existsSync(cachePath)) {
             let cacheData: any[] = JSON.parse(fs.readFileSync(cachePath).toString());

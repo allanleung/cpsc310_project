@@ -6,8 +6,8 @@
 import {Filter, QueryOptions, Query, dataSetDefinitions, keyRegex} from "./IInsightFacade";
 
 export default class QueryRequest implements Query {
-    WHERE: Filter;
-    OPTIONS: QueryOptions;
+    readonly WHERE: Filter;
+    readonly OPTIONS: QueryOptions;
 
     /**
      * Parses a query into a new QueryRequest
