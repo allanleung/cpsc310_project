@@ -242,7 +242,32 @@ describe("InsightFacade.Integration.performQuery", () => {
         })
     });
 
-    it('should return the correct reuslt for an instructor', () => {
+    it('should find all courses in a dept with a partial name', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "IS":{
+                    "courses_dept": "*psc"
+                }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                "ORDER": "courses_dept",
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.equal(200);
+            expect(response.body.result).to.not.be.empty;
+            for (let entry of response.body["result"]) {
+                expect(entry.courses_dept).to.contain('psc');
+            }
+        });
+    });
+
+    it('should return courses taught by an instructor', () => {
         return insightFacade.performQuery({
             "WHERE":{
                 "IS":{
