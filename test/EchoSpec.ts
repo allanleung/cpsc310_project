@@ -1,5 +1,7 @@
 /**
  * Created by rtholmes on 2016-10-31.
+ *
+ * Some basic tests for the server.
  */
 
 import Server from "../src/rest/Server";
@@ -8,8 +10,6 @@ import Log from "../src/Util";
 import {InsightResponse} from "../src/controller/IInsightFacade";
 
 describe("EchoSpec", function () {
-
-
     function sanityCheck(response: InsightResponse) {
         expect(response).to.have.property('code');
         expect(response).to.have.property('body');
@@ -64,5 +64,4 @@ describe("EchoSpec", function () {
         expect(out.body).to.have.property('error');
         expect(out.body).to.deep.equal({error: 'Message not provided'});
     });
-
 });

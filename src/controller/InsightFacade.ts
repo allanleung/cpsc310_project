@@ -1,94 +1,35 @@
 ///<reference path="IInsightFacade.ts"/>
-/**
- * This is the main programmatic entry point for the project.
- */
-const fs = require('fs');
-
-import {IInsightFacade, InsightResponse, QueryRequest} from "./IInsightFacade";
-import * as JSZip from 'jszip' ;
-
-import Log from "../Util";
-
-const cachePath = __dirname + '/data.json';
+import {isArray} from "util";
+import {
+    IInsightFacade,
+    InsightResponse,
+    Filter,
+    isOrFilter,
+    isAndFilter,
+    isLtFilter,
+    isGtFilter,
+    isEqFilter,
+    isNotFilter,
+    isIsFilter, dataSetDefinitions
+} from "./IInsightFacade";
+import * as JSZip from "jszip";
+import QueryRequest from "./QueryRequest";
+import DataController from "./DataController";
 
 export default class InsightFacade implements IInsightFacade {
-    dataSet: any;
+    public dataSet: DataController;
 
-    constructor(cache = true) {
-        Log.trace('InsightFacadeImpl::init()');
-        this.dataSet = {};
-
-        if (cache && fs.existsSync(cachePath)) {
-            Log.trace('Loading cached data');
-            let cacheData = fs.readFileSync(cachePath);
-            this.dataSet = JSON.parse(cacheData);
-        }
-        // this.dataSet = new Map<string, any>();
+    constructor(cache = false) {
+        this.dataSet = new DataController(cache);
     }
 
-    /**
-     courses_dept: string; The department that offered the course.
-     courses_id: string; The course number (will be treated as a string (e.g., 499b)).
-     courses_avg: number; The average of the course offering.
-     courses_instructor: string; The instructor teaching the course offering.
-     courses_title: string; The name of the course.
-     courses_pass: number; The number of students that passed the course offering.
-     courses_fail: number; The number of students that failed the course offering.
-     courses_audit: number; The number of students that audited the course offering.
-     courses_uuid: string; The unique id of a course offering
-     */
-
-    addDataset(id: string, content: string): Promise<InsightResponse> {
+    public addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
             new JSZip().loadAsync(content, {base64: true})
-                .then(zip => {
-                    const files: Promise<any[]>[] = [];
-
-                    let statusCode = 204;
-                    if (id in this.dataSet) {
-                        statusCode = 201
-                    }
-
-                    zip.forEach((path: string, file: JSZipObject) => {
-                        if (file.dir == true) {
-                            return;
-                        }
-
-                        files.push(file.async('string').then((data) => {
-                            return JSON.parse(data).result.map((entry: any) => {
-                                return {
-                                    courses_dept: entry.Subject,
-                                    courses_id: entry.Course,
-                                    courses_avg: entry.Avg,
-                                    courses_instructor: entry.Professor,
-                                    courses_title: entry.Title,
-                                    courses_pass: entry.Pass,
-                                    courses_fail: entry.Fail,
-                                    courses_audit: entry.Audit,
-                                    courses_uuid: entry.id
-                                };
-                            });
-                        }));
-                    });
-
-                    return Promise.all(files).then(data => {
-                        const allItems: any[] = [];
-
-                        for (let item of data) {
-                            allItems.push(...item);
-                        }
-
-                        this.dataSet[id] = allItems;
-
-                        fs.writeFileSync(cachePath, JSON.stringify(this.dataSet));
-
-                        resolve({
-                            code: statusCode,
-                            body: {}
-                        })
-                    })
-                })
-                .catch((err: any) => {
+                .then(zip => this.processZipFile(id, zip).then(response => {
+                    resolve(response);
+                }))
+                .catch(() => {
                     reject({
                         code: 400,
                         body: {
@@ -99,9 +40,9 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    removeDataset(id: string): Promise<InsightResponse> {
+    public removeDataset(id: string): Promise<InsightResponse> {
         return new Promise((fulfill, reject) => {
-            if (this.dataSet[id] == undefined) {
+            if (!this.dataSet.hasDataset(id)) {
                 reject({
                     code: 404,
                     body: {
@@ -110,7 +51,7 @@ export default class InsightFacade implements IInsightFacade {
                 });
             }
 
-            delete this.dataSet[id];
+            this.dataSet.removeDataset(id);
 
             fulfill({
                 code: 204,
@@ -119,216 +60,152 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    compareQuery(query: QueryRequest, oneItem: any) : boolean {
-        return this.innerQueryLoop(query.WHERE, oneItem);
-    }
-
-    verifyHasKey(key: string): boolean {
-        const matches = key.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
-
-        if (matches === null)
-            throw new Error("Key was in an invalid format");
-
-        return this.dataSet[matches[1]] != undefined;
-    }
-
-    innerQueryLoop(query: any, oneItem: any) : boolean {
-        if (Object.keys(query).length == 0) {
-            // base case
-            return true;
-        }
-
-        switch (Object.keys(query)[0]) {
-            case "OR":
-                let QueryResults : boolean = false;
-
-                if (query["OR"].length === 0) {
-                    throw new Error("Query malformed: empty AND");
-                }
-
-                for (let key of Object.keys(query["OR"])) {
-                    QueryResults = QueryResults || this.innerQueryLoop(query["OR"][key], oneItem);
-                }
-                return QueryResults;
-
-            case "AND":
-                let NotQueryResults : boolean = true;
-
-                if (query["AND"].length === 0) {
-                    throw new Error("Query malformed: empty AND");
-                }
-
-                for (let key of Object.keys(query["AND"])) {
-                    NotQueryResults = NotQueryResults && this.innerQueryLoop(query["AND"][key], oneItem);
-                }
-                return NotQueryResults;
-
-            case "LT":
-                let fieldLT: string = Object.keys(query["LT"])[0];
-                this.verifyHasKey(fieldLT);
-
-                if (typeof query["LT"][fieldLT] !== "number") {
-                    throw new Error("Query malformed: not a number");
-                }
-
-                return oneItem[fieldLT] < query["LT"][fieldLT];
-
-            case "GT":
-                let fieldGT: string = Object.keys(query["GT"])[0];
-                this.verifyHasKey(fieldGT);
-
-                if (typeof query["GT"][fieldGT] !== "number") {
-                    throw new Error("Query malformed: not a number");
-                }
-
-                return oneItem[fieldGT] > query["GT"][fieldGT];
-
-            case "EQ":
-                let fieldEQ: string = Object.keys(query["EQ"])[0];
-                this.verifyHasKey(fieldEQ);
-
-                if (typeof query["EQ"][fieldEQ] !== "string" && typeof query["EQ"][fieldEQ] !== "number") {
-                    throw new Error("Query malformed: not a string or number");
-                }
-
-                return oneItem[fieldEQ] === query["EQ"][fieldEQ];
-
-            case "NOT":
-                return !this.innerQueryLoop(query["NOT"], oneItem);
-
-            case "IS":
-                let fieldIS: string = Object.keys(query["IS"])[0];
-                this.verifyHasKey(fieldIS);
-                let starField : string = query["IS"][fieldIS];
-                if (starField[0] === "*") {
-                    starField = "." + starField;
-                }
-                else {
-                    starField = "^" + starField; // bc of regex
-                }
-                if (starField[starField.length - 1] === "*") {
-                    starField = starField.substring(0, starField.length - 1) + ".*";
-                }
-                else {
-                    starField = starField + "$"; // bc of regex
-                }
-
-                return oneItem[fieldIS].match(starField) !== null;
-            default:
-                throw new Error("Query malformed: " + Object.keys(query)[0]);
-        }
-    }
-
-    performQuery(query: QueryRequest): Promise <InsightResponse> {
+    public performQuery(query: any): Promise <InsightResponse> {
         return new Promise<InsightResponse>((fulfill, reject) => {
-            // check some invariants
-            if (query.OPTIONS.COLUMNS.indexOf(query.OPTIONS.ORDER) === -1) {
-                // invalid query
-                reject({
-                    code: 400,
-                    body: {
-                        error: "ORDER was not in COLUMNS"
-                    }
-                })
-            }
+            const parsingResult = QueryRequest.parseQuery(query);
 
-            if (query.OPTIONS.FORM != 'TABLE') {
-                // invalid query
-                reject({
-                    code: 400,
-                    body: {
-                        error: "FORM was not TABLE"
-                    }
-                })
-            }
-
-            // check that all the columns we're using start with courses_
-            const ids = query.OPTIONS.COLUMNS.map(column => {
-                const matches = column.match('^([A-Za-z0-9]+)_[A-Za-z0-9]+$');
-
-                if (matches === null)
-                    reject({
-                        code: 400,
-                        body: {
-                            error: "COLUMNS contained malformed key"
-                        }
-                    });
-
-                return matches[1];
-            });
-
-            let missing;
-
-            try {
-                missing = query.OPTIONS.COLUMNS.filter(column => !this.verifyHasKey(column))
-                    .map(missing => missing.substr(0, missing.indexOf('_')));
-            } catch (e) {
-                reject({
-                    code: 400,
-                    body: {
-                        error: "Malformed key"
-                    }
-                })
-            }
-
-            // TODO crawl the query once to collect all of these too
-            if (missing.length > 0) {
-                // 424, missing dataSets
-                reject({
-                    code: 424,
-                    body: {
-                        missing
-                    }
-                });
-            }
-
-            let queryList : any [] = [];
-            // for now, we only support the courses dataset
-            try {
-                Object.keys(this.dataSet).forEach((key: string) => {
-                    this.dataSet[key].forEach((value2: any) => {
-                        if (this.compareQuery(query, value2)) {
-                            queryList.push(value2);
-                        }
-                    });
-                });
-            } catch (e) {
+            if (parsingResult === null) {
                 reject({
                     code: 400,
                     body: {
                         error: "Malformed query"
                     }
                 })
+            } else if (isArray(parsingResult)) {
+                reject({
+                    code: 424,
+                    body: {
+                        missing: parsingResult
+                    }
+                })
             }
 
-            queryList.sort((item1 ,item2) => {
-                let item1value = item1[query.OPTIONS.ORDER];
-                let item2value = item2[query.OPTIONS.ORDER];
-                if (item1value < item2value) {
-                    return -1;
-                }
-                else if (item1value > item2value) {
-                    return 1;
-                }
-                else {
-                    return 0;
-                }
+            const parsedQuery = <QueryRequest>parsingResult;
+
+            const queryList: any[] = [];
+
+            this.dataSet.forEach(dataSet => {
+                queryList.push(...dataSet.filter(item => InsightFacade.performFilter(parsedQuery.WHERE, item)));
             });
-            queryList.forEach((value) => {
-                for (let key of Object.keys(value)) {
-                    if(query.OPTIONS.COLUMNS.indexOf(key) === -1)  {
-                        delete value[key];
+
+            if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
+                queryList.sort((item1, item2) => {
+                    let item1value = item1[parsedQuery.OPTIONS.ORDER];
+                    let item2value = item2[parsedQuery.OPTIONS.ORDER];
+                    if (item1value < item2value) {
+                        return -1;
                     }
-                }
+                    else if (item1value > item2value) {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                });
+            }
+
+            const rendered = queryList.map(item => {
+                const newItem: any = {};
+
+                for (let column of parsedQuery.OPTIONS.COLUMNS)
+                    newItem[column] = item[column];
+
+                return newItem;
             });
+
             fulfill({
                 code: 200,
                 body: {
                     render: 'TABLE',
-                    result: queryList
+                    result: rendered
                 }
             });
 
         });
+    }
+
+    private processZipFile(id: string, zip: JSZip): Promise<InsightResponse> {
+        const files: Promise<any[]>[] = [];
+
+        let statusCode = 204;
+        if (this.dataSet.hasDataset(id)) {
+            statusCode = 201
+        }
+
+        zip.forEach((path: string, file: JSZipObject) => {
+            if (file.dir == true) {
+                return;
+            }
+
+            files.push(file.async('string').then(dataSetDefinitions[id].parseFile));
+        });
+
+        return Promise.all(files).then(data => {
+            const allItems: any[] = [];
+
+            for (let item of data) {
+                allItems.push(...item);
+            }
+
+            this.dataSet.addDataset(id, allItems);
+
+            return {
+                code: statusCode,
+                body: {}
+            };
+        });
+    }
+
+    /**
+     * Determines whether the given item matches the filter
+     *
+     * @param filter the filter to match against
+     * @param oneItem the item to match
+     * @returns {any} true if the item matches the filter, false otherwise
+     */
+    private static performFilter(filter: Filter, oneItem: any) : boolean {
+        if (isOrFilter(filter)) {
+            return filter.OR.reduce((acc: boolean, innerQuery: any) => {
+                return acc || this.performFilter(innerQuery, oneItem);
+            }, false);
+        } else if (isAndFilter(filter)) {
+            return filter.AND.reduce((acc: boolean, innerQuery: any) => {
+                return acc && this.performFilter(innerQuery, oneItem);
+            }, true);
+        } else if (isLtFilter(filter)) {
+            const key = Object.keys(filter.LT)[0];
+            return key in oneItem && oneItem[key] < filter.LT[key];
+        } else if (isGtFilter(filter)) {
+            const key = Object.keys(filter.GT)[0];
+            return key in oneItem && oneItem[key] > filter.GT[key];
+        } else if (isEqFilter(filter)) {
+            const key = Object.keys(filter.EQ)[0];
+            return key in oneItem && oneItem[key] === filter.EQ[key];
+        } else if (isNotFilter(filter)) {
+            return !this.performFilter(filter.NOT, oneItem);
+        } else if (isIsFilter(filter)) {
+            const key = Object.keys(filter.IS)[0];
+            let value = filter.IS[key];
+
+            if (!(key in oneItem))
+                return false;
+
+            if (value === '*' || value === '**')
+            // match everything
+                return true;
+
+            if (value.startsWith("*") && value.endsWith("*")) {
+                const searchString = value.substr(1, value.length - 2);
+                return oneItem[key].indexOf(searchString) !== -1;
+            } else if (value.startsWith("*")) {
+                const searchString = value.substr(1);
+                return oneItem[key].endsWith(searchString);
+            } else if (value.endsWith("*")) {
+                const searchString = value.substr(0, value.length - 1);
+                return oneItem[key].startsWith(searchString);
+            } else {
+                return oneItem[key] === value;
+            }
+        }
     }
 }
