@@ -7,6 +7,10 @@ export const cachePath = __dirname + '/data.json';
 
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
 
+export function isUnknownDataset (id: string) {
+    return !(id in dataSetDefinitions);
+}
+
 export const dataSetDefinitions: {
     [dataSet: string]: {
         parseFile: (data: string) => any[],
@@ -61,11 +65,15 @@ export interface Query {
     OPTIONS: QueryOptions;
 }
 
+export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
+
+export type Comparator = {[key: string]: number};
+
+export type Logic = Filter[];
+
 export interface IsFilter {
     IS: {[key: string]: string;};
 }
-
-export type Comparator = {[key: string]: number};
 
 export interface LtFilter {
     LT: Comparator;
@@ -78,10 +86,6 @@ export interface GtFilter {
 export interface EqFilter {
     EQ: Comparator;
 }
-
-export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
-
-export type Logic = Filter[];
 
 export interface AndFilter {
     AND: Logic;

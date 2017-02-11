@@ -104,7 +104,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.addDataset('courses', []);
+        insightFacade._addDataset('courses', []);
     });
 
     afterEach(() => {
@@ -5262,7 +5262,7 @@ describe("InsightFacade.performQuery", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.addDataset('courses', [
+        insightFacade._addDataset('courses', [
             {
                 courses_title: "hong kong cinema",
                 courses_uuid: 39426,

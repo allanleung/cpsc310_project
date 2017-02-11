@@ -11,12 +11,23 @@ export default class DataController {
     private readonly dataSet: Map<string, any[]>;
 
     constructor(private readonly cache = false) {
-        this.dataSet = new Map<string, any[]>();
+        this.dataSet = new Map<string, any[]>(this.getInitialData());
+    }
 
-        if (this.cache && fs.existsSync(cachePath)) {
-            let cacheData: any[] = JSON.parse(fs.readFileSync(cachePath).toString());
-            this.dataSet = new Map<string, any[]>(cacheData);
+    private getInitialData() {
+        if (this.shouldLoadCache()) {
+            return DataController.readCacheData();
+        } else {
+            return [];
         }
+    }
+
+    private shouldLoadCache(): boolean {
+        return this.cache && fs.existsSync(cachePath);
+    }
+
+    private static readCacheData(): any[] {
+        return JSON.parse(fs.readFileSync(cachePath).toString());
     }
 
     public static resetCache() {
