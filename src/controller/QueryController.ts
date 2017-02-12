@@ -28,10 +28,10 @@ export default class QueryController {
         const filteredItems = this.filterItems(parsedQuery);
 
         if (parsedQuery.hasOrder()) {
-            this.sortFilteredItems(filteredItems, parsedQuery.OPTIONS.ORDER);
+            QueryController.sortFilteredItems(filteredItems, parsedQuery.OPTIONS.ORDER);
         }
 
-        return this.renderItems(filteredItems, parsedQuery.OPTIONS.COLUMNS);
+        return QueryController.renderItems(filteredItems, parsedQuery.OPTIONS.COLUMNS);
     }
 
     private filterItems(parsedQuery: Query) {
@@ -44,7 +44,7 @@ export default class QueryController {
         return filteredItems;
     }
 
-    private sortFilteredItems(filteredItems: any[], order: string) {
+    private static sortFilteredItems(filteredItems: any[], order: string) {
         filteredItems.sort((item1, item2) => {
             let value1 = item1[order];
             let value2 = item2[order];
@@ -59,7 +59,7 @@ export default class QueryController {
         });
     }
 
-    private renderItems(filteredItems: any[], columns: string[]): any[] {
+    private static renderItems(filteredItems: any[], columns: string[]): any[] {
         return filteredItems.map(item => {
             const newItem: any = {};
 
