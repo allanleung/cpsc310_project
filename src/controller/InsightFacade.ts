@@ -1,10 +1,11 @@
 ///<reference path="IInsightFacade.ts"/>
 import {isArray} from "util";
-import {IInsightFacade, InsightResponse, dataSetDefinitions, Query, isUnknownDataset} from "./IInsightFacade";
+import {IInsightFacade, InsightResponse, dataSetDefinitions, isUnknownDataset} from "./IInsightFacade";
 import * as JSZip from "jszip";
 import QueryParser from "./QueryParser";
 import DataController from "./DataController";
 import QueryController from "./QueryController";
+import Query from "./Query";
 
 export default class InsightFacade implements IInsightFacade {
     private readonly dataController: DataController;

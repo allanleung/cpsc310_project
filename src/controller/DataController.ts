@@ -3,8 +3,7 @@
  *
  * Contains a caching data map class.
  */
-
-import * as fs from 'fs';
+import * as fs from "fs";
 import {cachePath} from "./IInsightFacade";
 
 export default class DataController {

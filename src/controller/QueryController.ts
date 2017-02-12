@@ -1,4 +1,4 @@
-import {
+import Query, {
     isIsFilter,
     isNotFilter,
     isEqFilter,
@@ -7,8 +7,13 @@ import {
     isAndFilter,
     isOrFilter,
     Filter,
-    Query
-} from "./IInsightFacade";
+    IsFilter,
+    EqFilter,
+    GtFilter,
+    LtFilter,
+    AndFilter,
+    OrFilter
+} from "./Query";
 import DataController from "./DataController";
 /**
  * Created by jerome on 2017-02-10.
@@ -22,29 +27,18 @@ export default class QueryController {
     public executeQuery(parsedQuery: Query) {
         const filteredItems = this.filterItems(parsedQuery);
 
-        if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
+        if (parsedQuery.hasOrder()) {
             this.sortFilteredItems(filteredItems, parsedQuery.OPTIONS.ORDER);
         }
 
         return this.renderItems(filteredItems, parsedQuery.OPTIONS.COLUMNS);
     }
 
-    private renderItems(filteredItems: any[], columns: string[]): any[] {
-        return filteredItems.map(item => {
-            const newItem: any = {};
-
-            for (let column of columns)
-                newItem[column] = item[column];
-
-            return newItem;
-        })
-    }
-
     private filterItems(parsedQuery: Query) {
         const filteredItems: any[] = [];
 
         this.dataSet.forEach(dataSet => {
-            filteredItems.push(...dataSet.filter(item => QueryController.filterItem(parsedQuery.WHERE, item)));
+            filteredItems.push(...dataSet.filter(item => QueryController.shouldIncludeItem(parsedQuery.WHERE, item)));
         });
         return filteredItems;
     }
@@ -65,55 +59,89 @@ export default class QueryController {
         });
     }
 
-    /**
-     * Determines whether the given item matches the filter
-     *
-     * @param filter the filter to match against
-     * @param item the item to match
-     * @returns {any} true if the item matches the filter, false otherwise
-     */
-    private static filterItem(filter: Filter, item: any) : boolean {
+    private renderItems(filteredItems: any[], columns: string[]): any[] {
+        return filteredItems.map(item => {
+            const newItem: any = {};
+
+            for (let column of columns)
+                newItem[column] = item[column];
+
+            return newItem;
+        })
+    }
+
+    private static shouldIncludeItem(filter: Filter, item: any): boolean {
         if (isOrFilter(filter)) {
-            return filter.OR.reduce((acc: boolean, innerQuery: any) => {
-                return acc || this.filterItem(innerQuery, item);
-            }, false);
+            return this.processOrFilter(filter, item);
+
         } else if (isAndFilter(filter)) {
-            return filter.AND.reduce((acc: boolean, innerQuery: any) => {
-                return acc && this.filterItem(innerQuery, item);
-            }, true);
+            return this.processAndFilter(filter, item);
+
         } else if (isLtFilter(filter)) {
-            const key = Object.keys(filter.LT)[0];
-            return key in item && item[key] < filter.LT[key];
+            return this.processLtFilter(filter, item);
+
         } else if (isGtFilter(filter)) {
-            const key = Object.keys(filter.GT)[0];
-            return key in item && item[key] > filter.GT[key];
+            return this.processGtFilter(filter, item);
+
         } else if (isEqFilter(filter)) {
-            const key = Object.keys(filter.EQ)[0];
-            return key in item && item[key] === filter.EQ[key];
+            return this.processEqFilter(filter, item);
+
         } else if (isNotFilter(filter)) {
-            return !this.filterItem(filter.NOT, item);
+            return !this.shouldIncludeItem(filter.NOT, item);
+
         } else if (isIsFilter(filter)) {
-            const key = Object.keys(filter.IS)[0];
-            let value = filter.IS[key];
+            return this.processIsFilter(filter, item);
+        }
+    }
 
-            if (!(key in item))
-                return false;
+    private static processOrFilter(filter: OrFilter, item: any): boolean {
+        return filter.OR.reduce((acc: boolean, innerQuery: any) => {
+            return acc || this.shouldIncludeItem(innerQuery, item);
+        }, false);
+    }
 
-            if (value === '*' || value === '**')
-                return true;
+    private static processAndFilter(filter: AndFilter, item: any): boolean {
+        return filter.AND.reduce((acc: boolean, innerQuery: any) => {
+            return acc && this.shouldIncludeItem(innerQuery, item);
+        }, true);
+    }
 
-            if (value.startsWith("*") && value.endsWith("*")) {
-                const searchString = value.substr(1, value.length - 2);
-                return item[key].indexOf(searchString) !== -1;
-            } else if (value.startsWith("*")) {
-                const searchString = value.substr(1);
-                return item[key].endsWith(searchString);
-            } else if (value.endsWith("*")) {
-                const searchString = value.substr(0, value.length - 1);
-                return item[key].startsWith(searchString);
-            } else {
-                return item[key] === value;
-            }
+    private static processLtFilter(filter: LtFilter, item: any): boolean {
+        const key = Object.keys(filter.LT)[0];
+        return key in item && item[key] < filter.LT[key];
+    }
+
+    private static processGtFilter(filter: GtFilter, item: any): boolean {
+        const key = Object.keys(filter.GT)[0];
+        return key in item && item[key] > filter.GT[key];
+    }
+
+    private static processEqFilter(filter: EqFilter, item: any): boolean {
+        const key = Object.keys(filter.EQ)[0];
+        return key in item && item[key] === filter.EQ[key];
+    }
+
+    private static processIsFilter(filter: IsFilter, item: any): boolean {
+        const key = Object.keys(filter.IS)[0];
+        let value = filter.IS[key];
+
+        if (!(key in item))
+            return false;
+
+        if (value === '*' || value === '**')
+            return true;
+
+        if (value.startsWith("*") && value.endsWith("*")) {
+            const searchString = value.substr(1, value.length - 2);
+            return item[key].indexOf(searchString) !== -1;
+        } else if (value.startsWith("*")) {
+            const searchString = value.substr(1);
+            return item[key].endsWith(searchString);
+        } else if (value.endsWith("*")) {
+            const searchString = value.substr(0, value.length - 1);
+            return item[key].startsWith(searchString);
+        } else {
+            return item[key] === value;
         }
     }
 }

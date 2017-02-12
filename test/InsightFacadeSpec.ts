@@ -3,11 +3,10 @@
  *
  * Contains testst for InsightFacade.
  */
-
 import InsightFacade from "../src/controller/InsightFacade";
-import {expect} from 'chai';
-import * as fs from 'fs';
-import Log from '../src/Util';
+import {expect} from "chai";
+import * as fs from "fs";
+import Log from "../src/Util";
 import DataController from "../src/controller/DataController";
 
 describe("Log", () => {

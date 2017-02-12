@@ -3,9 +3,10 @@
  *
  * Contains the class for QueryRequest, which is responsible for parsing Queries.
  */
-import {Filter, QueryOptions, Query, dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
+import {dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
+import Query, {Filter, QueryOptions} from "./Query";
 
-export default class QueryParser implements Query {
+export default class QueryParser {
     readonly WHERE: Filter;
     readonly OPTIONS: QueryOptions;
 
@@ -34,7 +35,7 @@ export default class QueryParser implements Query {
 
         const filterTypesCorrect = this.verifyFilterDataTypes(datasets, query.WHERE);
 
-        return filterTypesCorrect ? <Query>query : null
+        return filterTypesCorrect ? new Query(query.WHERE, query.OPTIONS) : null
     }
 
     private static verifyToplevelQueryObject(query: any): boolean {
