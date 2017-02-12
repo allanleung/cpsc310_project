@@ -40,20 +40,20 @@ export default class QueryController {
         this.dataSet.forEach(dataSet => {
             filteredItems.push(...dataSet.filter(item => QueryController.shouldIncludeItem(parsedQuery.WHERE, item)));
         });
+
         return filteredItems;
     }
 
     private sortFilteredItems(filteredItems: any[], order: string) {
         filteredItems.sort((item1, item2) => {
-            let item1value = item1[order];
-            let item2value = item2[order];
-            if (item1value < item2value) {
+            let value1 = item1[order];
+            let value2 = item2[order];
+
+            if (value1 < value2) {
                 return -1;
-            }
-            else if (item1value > item2value) {
+            } else if (value1 > value2) {
                 return 1;
-            }
-            else {
+            } else {
                 return 0;
             }
         });
