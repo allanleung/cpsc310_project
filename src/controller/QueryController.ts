@@ -24,21 +24,21 @@ import DataController from "./DataController";
 export default class QueryController {
     constructor(readonly dataSet: DataController) {}
 
-    public executeQuery(parsedQuery: Query) {
-        const filteredItems = this.filterItems(parsedQuery);
+    public executeQuery(query: Query) {
+        const filteredItems = this.filterItems(query);
 
-        if (parsedQuery.hasOrder()) {
-            QueryController.sortFilteredItems(filteredItems, parsedQuery.OPTIONS.ORDER);
+        if (query.hasOrder()) {
+            QueryController.sortFilteredItems(filteredItems, query.OPTIONS.ORDER);
         }
 
-        return QueryController.renderItems(filteredItems, parsedQuery.OPTIONS.COLUMNS);
+        return QueryController.renderItems(filteredItems, query.OPTIONS.COLUMNS);
     }
 
-    private filterItems(parsedQuery: Query) {
+    private filterItems(query: Query) {
         const filteredItems: any[] = [];
 
         this.dataSet.forEach(dataSet => {
-            filteredItems.push(...dataSet.filter(item => QueryController.shouldIncludeItem(parsedQuery.WHERE, item)));
+            filteredItems.push(...dataSet.filter(item => QueryController.shouldIncludeItem(query.WHERE, item)));
         });
 
         return filteredItems;
