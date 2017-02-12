@@ -5288,7 +5288,7 @@ describe("InsightFacade.performQuery", () => {
             {
                 courses_title: "hong kong cinema 2",
                 courses_uuid: 39428,
-                courses_instructor: "some guy",
+                courses_instructor: "some guy 1",
                 courses_audit: 1,
                 courses_id: "315",
                 courses_pass: 71,
@@ -6567,6 +6567,30 @@ describe("InsightFacade.performQuery", () => {
             code: 400,
             body: {
                 error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should correctly filter on the last character of a prefix search', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    courses_instructor: "some guy 1*"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_instructor"
+                ],
+                FORM: "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                render: "TABLE",
+                result: [
+                    { courses_instructor: "some guy 1" }
+                ]
             }
         }))
     });
