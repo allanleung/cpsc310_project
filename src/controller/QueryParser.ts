@@ -21,6 +21,9 @@ export default class QueryParser implements Query {
 
         const datasets = this.extractAllDatasets(query);
 
+        if (datasets === null)
+            return null;
+
         const missing = this.findMissingDatasets(datasets);
 
         if (missing === null) {
