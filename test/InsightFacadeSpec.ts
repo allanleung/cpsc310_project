@@ -3,11 +3,10 @@
  *
  * Contains testst for InsightFacade.
  */
-
 import InsightFacade from "../src/controller/InsightFacade";
-import {expect} from 'chai';
-import * as fs from 'fs';
-import Log from '../src/Util';
+import {expect} from "chai";
+import * as fs from "fs";
+import Log from "../src/Util";
 import DataController from "../src/controller/DataController";
 
 describe("Log", () => {
@@ -104,7 +103,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.addDataset('courses', []);
+        insightFacade._addDataset('courses', []);
     });
 
     afterEach(() => {
@@ -5262,7 +5261,7 @@ describe("InsightFacade.performQuery", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.addDataset('courses', [
+        insightFacade._addDataset('courses', [
             {
                 courses_title: "hong kong cinema",
                 courses_uuid: 39426,
@@ -5288,7 +5287,7 @@ describe("InsightFacade.performQuery", () => {
             {
                 courses_title: "hong kong cinema 2",
                 courses_uuid: 39428,
-                courses_instructor: "some guy",
+                courses_instructor: "some guy 1",
                 courses_audit: 1,
                 courses_id: "315",
                 courses_pass: 71,
@@ -6567,6 +6566,30 @@ describe("InsightFacade.performQuery", () => {
             code: 400,
             body: {
                 error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should correctly filter on the last character of a prefix search', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    courses_instructor: "some guy 1*"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_instructor"
+                ],
+                FORM: "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                render: "TABLE",
+                result: [
+                    { courses_instructor: "some guy 1" }
+                ]
             }
         }))
     });

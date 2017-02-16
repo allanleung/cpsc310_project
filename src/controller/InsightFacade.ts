@@ -1,33 +1,42 @@
 ///<reference path="IInsightFacade.ts"/>
 import {isArray} from "util";
-import {
-    IInsightFacade,
-    InsightResponse,
-    Filter,
-    isOrFilter,
-    isAndFilter,
-    isLtFilter,
-    isGtFilter,
-    isEqFilter,
-    isNotFilter,
-    isIsFilter, dataSetDefinitions
-} from "./IInsightFacade";
+import {IInsightFacade, InsightResponse, dataSetDefinitions, isUnknownDataset} from "./IInsightFacade";
 import * as JSZip from "jszip";
-import QueryRequest from "./QueryRequest";
+import QueryParser from "./QueryParser";
 import DataController from "./DataController";
+import QueryController from "./QueryController";
+import Query from "./Query";
 
 export default class InsightFacade implements IInsightFacade {
-    public dataSet: DataController;
+    private readonly dataController: DataController;
+    private readonly queryController: QueryController;
 
     constructor(cache = false) {
-        this.dataSet = new DataController(cache);
+        this.dataController = new DataController(cache);
+        this.queryController = new QueryController(this.dataController);
     }
 
     public addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
+            if (isUnknownDataset(id)) {
+                reject({
+                    code: 400,
+                    body: {
+                        error: "Don't know how to handle " + id + " dataset"
+                    }
+                })
+            }
+
             new JSZip().loadAsync(content, {base64: true})
-                .then(zip => this.processZipFile(id, zip).then(response => {
-                    resolve(response);
+                .then(zip => this.processZipFile(id, zip).then(allItems => {
+                    const statusCode = this.isNewDataset(id) ? 204 : 201;
+
+                    this.dataController.addDataset(id, allItems);
+
+                    resolve({
+                        code: statusCode,
+                        body: {}
+                    });
                 }))
                 .catch(() => {
                     reject({
@@ -42,7 +51,7 @@ export default class InsightFacade implements IInsightFacade {
 
     public removeDataset(id: string): Promise<InsightResponse> {
         return new Promise((fulfill, reject) => {
-            if (!this.dataSet.hasDataset(id)) {
+            if (!this.dataController.hasDataset(id)) {
                 reject({
                     code: 404,
                     body: {
@@ -51,7 +60,7 @@ export default class InsightFacade implements IInsightFacade {
                 });
             }
 
-            this.dataSet.removeDataset(id);
+            this.dataController.removeDataset(id);
 
             fulfill({
                 code: 204,
@@ -62,7 +71,7 @@ export default class InsightFacade implements IInsightFacade {
 
     public performQuery(query: any): Promise <InsightResponse> {
         return new Promise<InsightResponse>((fulfill, reject) => {
-            const parsingResult = QueryRequest.parseQuery(query);
+            const parsingResult = QueryParser.parseQuery(query);
 
             if (parsingResult === null) {
                 reject({
@@ -80,38 +89,7 @@ export default class InsightFacade implements IInsightFacade {
                 })
             }
 
-            const parsedQuery = <QueryRequest>parsingResult;
-
-            const queryList: any[] = [];
-
-            this.dataSet.forEach(dataSet => {
-                queryList.push(...dataSet.filter(item => InsightFacade.performFilter(parsedQuery.WHERE, item)));
-            });
-
-            if (typeof parsedQuery.OPTIONS.ORDER === 'string') {
-                queryList.sort((item1, item2) => {
-                    let item1value = item1[parsedQuery.OPTIONS.ORDER];
-                    let item2value = item2[parsedQuery.OPTIONS.ORDER];
-                    if (item1value < item2value) {
-                        return -1;
-                    }
-                    else if (item1value > item2value) {
-                        return 1;
-                    }
-                    else {
-                        return 0;
-                    }
-                });
-            }
-
-            const rendered = queryList.map(item => {
-                const newItem: any = {};
-
-                for (let column of parsedQuery.OPTIONS.COLUMNS)
-                    newItem[column] = item[column];
-
-                return newItem;
-            });
+            const rendered = this.queryController.executeQuery(<Query>parsingResult);
 
             fulfill({
                 code: 200,
@@ -124,13 +102,12 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    private processZipFile(id: string, zip: JSZip): Promise<InsightResponse> {
-        const files: Promise<any[]>[] = [];
+    private isNewDataset(id: string): boolean {
+        return !this.dataController.hasDataset(id)
+    }
 
-        let statusCode = 204;
-        if (this.dataSet.hasDataset(id)) {
-            statusCode = 201
-        }
+    private processZipFile(id: string, zip: JSZip): Promise<any[]> {
+        const files: Promise<any[]>[] = [];
 
         zip.forEach((path: string, file: JSZipObject) => {
             if (file.dir == true) {
@@ -147,65 +124,18 @@ export default class InsightFacade implements IInsightFacade {
                 allItems.push(...item);
             }
 
-            this.dataSet.addDataset(id, allItems);
-
-            return {
-                code: statusCode,
-                body: {}
-            };
+            return allItems;
         });
     }
 
     /**
-     * Determines whether the given item matches the filter
+     * Add a dataset directly, without going through the parsing process. Used for internal testing.
      *
-     * @param filter the filter to match against
-     * @param oneItem the item to match
-     * @returns {any} true if the item matches the filter, false otherwise
+     * @param id the id of the dataset
+     * @param entries the entries of the dataset
+     * @private
      */
-    private static performFilter(filter: Filter, oneItem: any) : boolean {
-        if (isOrFilter(filter)) {
-            return filter.OR.reduce((acc: boolean, innerQuery: any) => {
-                return acc || this.performFilter(innerQuery, oneItem);
-            }, false);
-        } else if (isAndFilter(filter)) {
-            return filter.AND.reduce((acc: boolean, innerQuery: any) => {
-                return acc && this.performFilter(innerQuery, oneItem);
-            }, true);
-        } else if (isLtFilter(filter)) {
-            const key = Object.keys(filter.LT)[0];
-            return key in oneItem && oneItem[key] < filter.LT[key];
-        } else if (isGtFilter(filter)) {
-            const key = Object.keys(filter.GT)[0];
-            return key in oneItem && oneItem[key] > filter.GT[key];
-        } else if (isEqFilter(filter)) {
-            const key = Object.keys(filter.EQ)[0];
-            return key in oneItem && oneItem[key] === filter.EQ[key];
-        } else if (isNotFilter(filter)) {
-            return !this.performFilter(filter.NOT, oneItem);
-        } else if (isIsFilter(filter)) {
-            const key = Object.keys(filter.IS)[0];
-            let value = filter.IS[key];
-
-            if (!(key in oneItem))
-                return false;
-
-            if (value === '*' || value === '**')
-            // match everything
-                return true;
-
-            if (value.startsWith("*") && value.endsWith("*")) {
-                const searchString = value.substr(1, value.length - 2);
-                return oneItem[key].indexOf(searchString) !== -1;
-            } else if (value.startsWith("*")) {
-                const searchString = value.substr(1);
-                return oneItem[key].endsWith(searchString);
-            } else if (value.endsWith("*")) {
-                const searchString = value.substr(0, value.length - 1);
-                return oneItem[key].startsWith(searchString);
-            } else {
-                return oneItem[key] === value;
-            }
-        }
+    public _addDataset(id: string, entries: any[]) {
+        this.dataController.addDataset(id, entries);
     }
 }
