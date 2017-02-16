@@ -110,8 +110,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-            )
-        )).to.deep.eq([
+        ))).to.deep.eq([
             {courses_dept: "asia", courses_id: "325", courses_avg: 71.18},
             {courses_dept: "asia", courses_id: "325", courses_avg: 71.18}
         ]);

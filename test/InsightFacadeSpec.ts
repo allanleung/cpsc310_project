@@ -132,3 +132,134 @@ describe("InsightFacade.removeDataset", () => {
         })
     });
 });
+
+describe("InsightFacade.performQuery", () => {
+    let insightFacade: InsightFacade = null;
+
+    beforeEach(() => {
+        insightFacade = new InsightFacade(false);
+        insightFacade._addDataset('courses', [
+            {
+                courses_title: "hong kong cinema",
+                courses_uuid: 39426,
+                courses_instructor: "bailey, c. d. alison",
+                courses_audit: 1,
+                courses_id: "325",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 71.18,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "hong kong cinema",
+                courses_uuid: 39427,
+                courses_instructor: "",
+                courses_audit: 1,
+                courses_id: "325",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 71.18,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "hong kong cinema 2",
+                courses_uuid: 39428,
+                courses_instructor: "some guy 1",
+                courses_audit: 1,
+                courses_id: "315",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 98.5,
+                courses_dept: "asia"
+            },
+            {
+                courses_title: "vancouver cinema",
+                courses_uuid: 39429,
+                courses_instructor: "some guy 2",
+                courses_audit: 1,
+                courses_id: "385",
+                courses_pass: 71,
+                courses_fail: 1,
+                courses_avg: 90.5,
+                courses_dept: "asia"
+            }
+        ]);
+    });
+
+    afterEach(() => {
+        insightFacade = null;
+    });
+
+    it('should produce 200 for a successful query', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                AND: [
+                    {
+                        GT: {
+                            courses_avg: 85
+                        }
+                    },
+                    {
+                        LT: {
+                            courses_avg: 95
+                        }
+                    }
+                ]
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_avg",
+                    "courses_id",
+                ],
+                ORDER: "courses_id",
+                FORM: "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                render: "TABLE",
+                result: [
+                    {courses_dept: "asia", courses_id: "385", courses_avg: 90.5}
+                ]
+            }
+        }))
+    });
+
+    it('should produce 400 for an invalid query', () => {
+        return insightFacade.performQuery(null).then(() => {
+            throw new Error("Test should have failed");
+        }, err => expect(err).to.deep.eq({
+            code: 400,
+            body: {
+                error: 'Malformed query'
+            }
+        }))
+    });
+
+    it('should produce 424 for missing datasets', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                NOT: {
+                    IS: {
+                        fake_avgs: "325"
+                    }
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        }).then(() => {
+            throw new Error("Test should have failed")
+        }, err => expect(err).to.deep.eq({
+            code: 424,
+            body: {
+                missing: ['fake']
+            }
+        }))
+    });
+});

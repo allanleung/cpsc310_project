@@ -1,7 +1,42 @@
 import {expect} from 'chai';
 import QueryParser from "../src/controller/QueryParser";
+import Query from "../src/controller/Query";
 
 describe('QueryParser.parseQuery', () => {
+    it('should produce a correct query when the query is valid', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {
+                "IS": {
+                    courses_id: "325"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE",
+            }
+        })).to.deep.eq(new Query(
+            {
+                "IS": {
+                    courses_id: "325"
+                }
+            },
+            {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE",
+            }
+        ))
+    });
+
     it('should fail when given a query without an OPTIONS', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
