@@ -3,6 +3,7 @@
  * A class called InsightFacade, this should be in a file called InsightFacade.ts.
  * You should not change this interface at all or the test suite will not work.
  */
+import * as parse5 from 'parse5';
 export const cachePath = __dirname + '/data.json';
 
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
@@ -13,28 +14,14 @@ export function isUnknownDataset (id: string) {
 
 export const dataSetDefinitions: {
     [dataSet: string]: {
-        parseFile: (data: string) => any[],
+        processZip: (zip: JSZip) => Promise<any[]>,
         keys: {
             [key: string]: string
         }
     }
 } = {
     courses: {
-        parseFile: data => {
-            return JSON.parse(data).result.map((entry: any) => {
-                return {
-                    courses_dept: entry.Subject,
-                    courses_id: entry.Course,
-                    courses_avg: entry.Avg,
-                    courses_instructor: entry.Professor,
-                    courses_title: entry.Title,
-                    courses_pass: entry.Pass,
-                    courses_fail: entry.Fail,
-                    courses_audit: entry.Audit,
-                    courses_uuid: entry.id
-                };
-            });
-        },
+        processZip: processCoursesZip,
         keys: {
             courses_dept: 'string',
             courses_id: 'string',
@@ -46,8 +33,72 @@ export const dataSetDefinitions: {
             courses_audit: 'number',
             courses_uuid: 'string'
         }
+    },
+    rooms: {
+        processZip: processRoomsZip,
+        keys: {
+            rooms_fullname: 'string',
+            rooms_shortname: 'string',
+            rooms_number: 'number',
+            rooms_name: 'string',
+            rooms_address: 'string',
+            rooms_lat: 'number',
+            rooms_lon: 'number',
+            rooms_seats: 'number',
+            rooms_type: 'number',
+            rooms_furniture: 'string',
+            rooms_href: 'string'
+        }
     }
 };
+
+function processRoomsZip(zip: JSZip): Promise<any[]> {
+    return zip.file('/index.html').async('string')
+        .then(data => processRoomsIndex(<parse5.AST.Default.Document>parse5.parse(data)));
+}
+
+function processRoomsIndex(document: parse5.AST.Default.Document): Promise<any[]> {
+
+    return null;
+}
+
+function processCoursesZip(zip: JSZip): Promise<any[]> {
+    const files: Promise<any[]>[] = [];
+
+    zip.forEach((path: string, file: JSZipObject) => {
+        if (file.dir == true) {
+            return;
+        }
+
+        files.push(file.async('string').then(parseCoursesFile));
+    });
+
+    return Promise.all(files).then(data => {
+        const allItems: any[] = [];
+
+        for (let item of data) {
+            allItems.push(...item);
+        }
+
+        return allItems;
+    });
+}
+
+function parseCoursesFile(data: string): any {
+    return JSON.parse(data).result.map((entry: any) => {
+        return {
+            courses_dept: entry.Subject,
+            courses_id: entry.Course,
+            courses_avg: entry.Avg,
+            courses_instructor: entry.Professor,
+            courses_title: entry.Title,
+            courses_pass: entry.Pass,
+            courses_fail: entry.Fail,
+            courses_audit: entry.Audit,
+            courses_uuid: entry.id
+        };
+    });
+}
 
 export interface InsightResponse {
     code: number;
