@@ -28,7 +28,7 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             new JSZip().loadAsync(content, {base64: true})
-                .then(zip => this.processZipFile(id, zip).then(allItems => {
+                .then(zip => dataSetDefinitions[id].processZip(zip).then(allItems => {
                     const statusCode = this.isNewDataset(id) ? 204 : 201;
 
                     this.dataController.addDataset(id, allItems);
@@ -104,28 +104,6 @@ export default class InsightFacade implements IInsightFacade {
 
     private isNewDataset(id: string): boolean {
         return !this.dataController.hasDataset(id)
-    }
-
-    private processZipFile(id: string, zip: JSZip): Promise<any[]> {
-        const files: Promise<any[]>[] = [];
-
-        zip.forEach((path: string, file: JSZipObject) => {
-            if (file.dir == true) {
-                return;
-            }
-
-            files.push(file.async('string').then(dataSetDefinitions[id].parseFile));
-        });
-
-        return Promise.all(files).then(data => {
-            const allItems: any[] = [];
-
-            for (let item of data) {
-                allItems.push(...item);
-            }
-
-            return allItems;
-        });
     }
 
     /**
