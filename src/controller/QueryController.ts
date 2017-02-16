@@ -24,7 +24,7 @@ import DataController from "./DataController";
 export default class QueryController {
     constructor(readonly dataSet: DataController) {}
 
-    public executeQuery(query: Query) {
+    public executeQuery(query: Query): any[] {
         const filteredItems = this.filterItems(query);
 
         if (query.hasOrder()) {
@@ -34,7 +34,7 @@ export default class QueryController {
         return QueryController.renderItems(filteredItems, query.OPTIONS.COLUMNS);
     }
 
-    private filterItems(query: Query) {
+    private filterItems(query: Query): any[] {
         const filteredItems: any[] = [];
 
         this.dataSet.forEach(dataSet => {
