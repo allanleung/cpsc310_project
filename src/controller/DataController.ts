@@ -3,22 +3,30 @@
  *
  * Contains a caching data map class.
  */
-
-import * as fs from 'fs';
+import * as fs from "fs";
 import {cachePath} from "./IInsightFacade";
 
 export default class DataController {
-    private dataSet: Map<string, any[]>;
-    private cache: boolean;
+    private readonly dataSet: Map<string, any[]>;
 
-    constructor(cache = false) {
-        this.dataSet = new Map<string, any[]>();
-        this.cache = cache;
+    constructor(private readonly cache = false) {
+        this.dataSet = new Map<string, any[]>(this.getInitialData());
+    }
 
-        if (this.cache && fs.existsSync(cachePath)) {
-            let cacheData: any[] = JSON.parse(fs.readFileSync(cachePath).toString());
-            this.dataSet = new Map<string, any[]>(cacheData);
+    private getInitialData() {
+        if (this.shouldLoadCache()) {
+            return DataController.readCacheData();
+        } else {
+            return [];
         }
+    }
+
+    private shouldLoadCache(): boolean {
+        return this.cache && fs.existsSync(cachePath);
+    }
+
+    private static readCacheData(): any[] {
+        return JSON.parse(fs.readFileSync(cachePath).toString());
     }
 
     public static resetCache() {

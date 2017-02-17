@@ -3,11 +3,10 @@
  *
  * Contains testst for InsightFacade.
  */
-
 import InsightFacade from "../src/controller/InsightFacade";
-import {expect} from 'chai';
-import * as fs from 'fs';
-import Log from '../src/Util';
+import {expect} from "chai";
+import * as fs from "fs";
+import Log from "../src/Util";
 import DataController from "../src/controller/DataController";
 
 describe("Log", () => {
@@ -117,7 +116,7 @@ describe("InsightFacade.removeDataset", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.addDataset('courses', []);
+        insightFacade._addDataset('courses', []);
     });
 
     afterEach(() => {
@@ -5269,6 +5268,36 @@ describe("InsightFacade.Integration.performQuery", () => {
             body: {"render":"TABLE","result":[{"courses_instructor":"berndt, annette;jaeger, carol patricia;rogalski," + " pamela"},{"courses_instructor":"couch, brett;germano, bernardita;kalas, pamela;kopp, christopher;moussavi, maryam;nomme, kathy margaret;norman, lynn;sun, chin"},{"courses_instructor":"couch, brett;kalas, pamela"},{"courses_instructor":"dalziel, pamela"},{"courses_instructor":"dalziel, pamela"},{"courses_instructor":"dalziel, pamela"},{"courses_instructor":"dalziel, pamela"},{"courses_instructor":"desaulniers, shawn;leung, fok-shuen;sargent, pamela"},{"courses_instructor":"donner, simon;o, pamela"},{"courses_instructor":"donner, simon;o, pamela"},{"courses_instructor":"gaitan, carlos;o, pamela"},{"courses_instructor":"gaitan, carlos;o, pamela"},{"courses_instructor":"hirakata, pamela"},{"courses_instructor":"hoodless, pamela;juriloff, diana;lefebvre, louis;robinson, wendy"},{"courses_instructor":"hoodless, pamela;juriloff, diana;lefebvre, louis;robinson, wendy"},{"courses_instructor":"hoodless, pamela;juriloff, diana;lefebvre, louis;robinson, wendy"},{"courses_instructor":"hoodless, pamela;juriloff, diana;robinson, wendy"},{"courses_instructor":"hoodless, pamela;lefebvre, louis;van raamsdonk, catherine"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela"},{"courses_instructor":"kalas, pamela;klenz, jennifer"},{"courses_instructor":"kalas, pamela;klenz, jennifer"},{"courses_instructor":"kalas, pamela;leander, celeste"},{"courses_instructor":"kalas, pamela;nomme, kathy margaret;sun, chin"},{"courses_instructor":"leung, fok-shuen;sargent, pamela;tba"},{"courses_instructor":"leung, fok-shuen;sargent, pamela;tba"},{"courses_instructor":"leung, fok-shuen;sargent, pamela;wong, tom"},{"courses_instructor":"ratner, pamela"},{"courses_instructor":"ratner, pamela"},{"courses_instructor":"ratner, pamela"},{"courses_instructor":"ratner, pamela;varcoe, colleen"},{"courses_instructor":"ratner, pamela;varcoe, colleen"},{"courses_instructor":"ratner, pamela;varcoe, colleen"},{"courses_instructor":"rogalski, pamela"},{"courses_instructor":"rogalski, pamela"}]}
         }));
     });
+
+    it('should be able to find all courses in a department with a partial name', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                AND: [
+                    {
+                        IS: {
+                            courses_title: "*cmpt*"
+                        }
+                    },
+                    {
+                        IS: {
+                            courses_dept: "cpsc"
+                        }
+                    }
+                ]
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_title",
+                    "courses_uuid",
+                    "courses_id"
+                ],
+                FORM: 'TABLE'
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {"render":"TABLE","result":[{"courses_title":"hmn-cmpt intract","courses_uuid":1378,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":1379,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":46805,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":46806,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":50001,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":50002,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":52117,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":52118,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":61241,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":61242,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":62478,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":62479,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":72469,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":72470,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":83537,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":83538,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":90648,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":90649,"courses_id":"544"}]}
+        }));
+    });
 });
 
 describe("InsightFacade.performQuery", () => {
@@ -5276,7 +5305,7 @@ describe("InsightFacade.performQuery", () => {
 
     beforeEach(() => {
         insightFacade = new InsightFacade(false);
-        insightFacade.dataSet.addDataset('courses', [
+        insightFacade._addDataset('courses', [
             {
                 courses_title: "hong kong cinema",
                 courses_uuid: 39426,
@@ -5302,7 +5331,7 @@ describe("InsightFacade.performQuery", () => {
             {
                 courses_title: "hong kong cinema 2",
                 courses_uuid: 39428,
-                courses_instructor: "some guy",
+                courses_instructor: "some guy 1",
                 courses_audit: 1,
                 courses_id: "315",
                 courses_pass: 71,
@@ -6581,6 +6610,30 @@ describe("InsightFacade.performQuery", () => {
             code: 400,
             body: {
                 error: "Malformed query"
+            }
+        }))
+    });
+
+    it('should correctly filter on the last character of a prefix search', () => {
+        return insightFacade.performQuery({
+            WHERE: {
+                IS: {
+                    courses_instructor: "some guy 1*"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_instructor"
+                ],
+                FORM: "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                render: "TABLE",
+                result: [
+                    { courses_instructor: "some guy 1" }
+                ]
             }
         }))
     });

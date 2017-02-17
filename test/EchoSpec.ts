@@ -3,9 +3,8 @@
  *
  * Some basic tests for the server.
  */
-
 import Server from "../src/rest/Server";
-import {expect} from 'chai';
+import {expect} from "chai";
 import Log from "../src/Util";
 import {InsightResponse} from "../src/controller/IInsightFacade";
 

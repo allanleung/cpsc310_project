@@ -9,7 +9,7 @@ export const cachePath = __dirname + '/data.json';
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
 
 import * as parse5 from 'parse5';
-export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: any[]) : parse5.AST.Default.Element[]  {
+export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: any[]) : parse5.AST.Default.Element[] {
     let elements: parse5.AST.Default.Element[] = [];
 
     let elem: parse5.AST.Default.Element = node as parse5.AST.Default.Element;
@@ -29,13 +29,17 @@ export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: a
         for (let child of node.childNodes) {
             var foundElements = getElementsByAttrs((<parse5.AST.Default.Element>child), attrs);
 
-            for (var found of foundElements)  {
+            for (var found of foundElements) {
                 elements.push(found);
             }
         }
     }
 
     return elements;
+}
+
+export function isUnknownDataset (id: string) {
+    return !(id in dataSetDefinitions);
 }
 
 export const dataSetDefinitions: {
@@ -168,79 +172,6 @@ export const dataSetDefinitions: {
 export interface InsightResponse {
     code: number;
     body: any; // the actual response
-}
-
-export interface QueryOptions {
-    COLUMNS: string[];
-    ORDER: string;
-    FORM: string;
-}
-
-export interface Query {
-    WHERE: Filter;
-    OPTIONS: QueryOptions;
-}
-
-export interface IsFilter {
-    IS: { [key: string]: string; };
-}
-
-export type Comparator = { [key: string]: number };
-
-export interface LtFilter {
-    LT: Comparator;
-}
-
-export interface GtFilter {
-    GT: Comparator;
-}
-
-export interface EqFilter {
-    EQ: Comparator;
-}
-
-export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
-
-export type Logic = Filter[];
-
-export interface AndFilter {
-    AND: Logic;
-}
-
-export interface OrFilter {
-    OR: Logic;
-}
-
-export interface NotFilter {
-    NOT: Filter;
-}
-
-export function isIsFilter(item: Filter): item is IsFilter {
-    return (<IsFilter>item).IS !== undefined;
-}
-
-export function isGtFilter(item: Filter): item is GtFilter {
-    return (<GtFilter>item).GT !== undefined;
-}
-
-export function isLtFilter(item: Filter): item is LtFilter {
-    return (<LtFilter>item).LT !== undefined;
-}
-
-export function isEqFilter(item: Filter): item is EqFilter {
-    return (<EqFilter>item).EQ !== undefined;
-}
-
-export function isAndFilter(item: Filter): item is AndFilter {
-    return (<AndFilter>item).AND !== undefined;
-}
-
-export function isOrFilter(item: Filter): item is OrFilter {
-    return (<OrFilter>item).OR !== undefined;
-}
-
-export function isNotFilter(item: Filter): item is NotFilter {
-    return (<NotFilter>item).NOT !== undefined;
 }
 
 export interface IInsightFacade {
