@@ -13,6 +13,7 @@ import {
     isIsFilter, dataSetDefinitions
 } from "./IInsightFacade";
 import * as JSZip from "jszip";
+import * as parse5 from 'parse5';
 import QueryRequest from "./QueryRequest";
 import DataController from "./DataController";
 
@@ -133,7 +134,7 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         zip.forEach((path: string, file: JSZipObject) => {
-            if (file.dir == true) {
+            if (file.dir == true || file.name.includes('.')) {
                 return;
             }
 

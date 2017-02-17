@@ -3,9 +3,40 @@
  * A class called InsightFacade, this should be in a file called InsightFacade.ts.
  * You should not change this interface at all or the test suite will not work.
  */
+import {isNullOrUndefined} from "util";
 export const cachePath = __dirname + '/data.json';
 
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
+
+import * as parse5 from 'parse5';
+export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: any[]) : parse5.AST.Default.Element[]  {
+    let elements: parse5.AST.Default.Element[] = [];
+
+    let elem: parse5.AST.Default.Element = node as parse5.AST.Default.Element;
+    if (elem.attrs !== undefined) {
+        let matches: boolean = attrs.every((attr) => {
+            return elem.attrs.some((elemAttr) => {
+                return attr.name === elemAttr.name && elemAttr.value.search(attr.value) != -1;
+            });
+        });
+
+        if (matches) {
+            return [elem];
+        }
+    }
+
+    if (node.childNodes !== undefined) {
+        for (let child of node.childNodes) {
+            var foundElements = getElementsByAttrs((<parse5.AST.Default.Element>child), attrs);
+
+            for (var found of foundElements)  {
+                elements.push(found);
+            }
+        }
+    }
+
+    return elements;
+}
 
 export const dataSetDefinitions: {
     [dataSet: string]: {
@@ -15,34 +46,123 @@ export const dataSetDefinitions: {
         }
     }
 } = {
-    courses: {
-        parseFile: data => {
-            return JSON.parse(data).result.map((entry: any) => {
-                return {
-                    courses_dept: entry.Subject,
-                    courses_id: entry.Course,
-                    courses_avg: entry.Avg,
-                    courses_instructor: entry.Professor,
-                    courses_title: entry.Title,
-                    courses_pass: entry.Pass,
-                    courses_fail: entry.Fail,
-                    courses_audit: entry.Audit,
-                    courses_uuid: entry.id
-                };
-            });
+        rooms: {
+            // rooms_fullname: string; Full building name (e.g., "Hugh Dempster Pavilion").
+            // rooms_shortname: string; Short building name (e.g., "DMP").
+            // rooms_number: string; The room number. Not always a number, so represented as a string.
+            // rooms_name: string; The room id; should be rooms_shortname+"_"+rooms_number.
+            // rooms_address: string; The building address. (e.g., "6245 Agronomy Road V6T 1Z4").
+            // rooms_lat: number; The latitude of the building. Instructions for getting this field are below.
+            // rooms_lon: number; The longitude of the building. Instructions for getting this field are below.
+            // rooms_seats: number; The number of seats in the room.
+            // rooms_type: string; The room type (e.g., "Small Group").
+            // rooms_furniture: string; The room type (e.g., "Classroom-Movable Tables & Chairs").
+            // rooms_href: string; The link to full details online (e.g., "http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/DMP-201").
+            parseFile: data => {
+                // TODO: Move into implementation
+                // TODO: Fix room number format, Lookup address
+
+                let buildingDocument: parse5.AST.Default.Document = parse5.parse(data) as parse5.AST.Default.Document;
+                let canonicalName = getElementsByAttrs(buildingDocument, [
+                    {
+                        name: "rel",
+                        value: "canonical"
+                    }
+                ]);
+
+                let buildings = getElementsByAttrs(buildingDocument, [
+                    {
+                        name: "id",
+                        value: "^buildings-wrapper$"
+                    }
+                ]);
+                let buildingInfo = getElementsByAttrs(buildings[0], [
+                    {
+                        name: "class",
+                        value: "^field-content$"
+                    }
+                ]);
+
+                let classrooms = getElementsByAttrs(buildingDocument, [
+                    {
+                        name: "class",
+                        value: "^view view-buildings-and-classrooms view-id-buildings_and_classrooms .*"
+                    }
+                ]);
+
+                let rooms = getElementsByAttrs(classrooms[0], [
+                    {
+                        name: "class",
+                        value: "^(odd|even) .*"
+                    }
+                ]);
+
+                return rooms.map((room) => {
+                    let fields = getElementsByAttrs(room, [
+                        {
+                            name: "class",
+                            value: "^views-field .*"
+                        }
+                    ]);
+
+                    return {
+                        rooms_fullname: (<parse5.AST.Default.TextNode>buildingInfo[0].childNodes[0]).value,
+                        rooms_shortname: canonicalName[0].attrs[1].value,
+                        rooms_number: (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim(),
+                        rooms_address: (<parse5.AST.Default.TextNode>buildingInfo[1].childNodes[0]).value,
+                        rooms_lat: 'number',
+                        rooms_lon: 'number',
+                        rooms_seats: (<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim(),
+                        rooms_type: (<parse5.AST.Default.TextNode>fields[3].childNodes[0]).value.trim(),
+                        rooms_furniture: (<parse5.AST.Default.TextNode>fields[2].childNodes[0]).value.trim(),
+                        rooms_href: (<parse5.AST.Default.Element>fields[0].childNodes[1]).attrs[0].value
+                    };
+
+                });
+            },
+            keys: {
+                rooms_fullname: 'string',
+                rooms_shortname: 'string',
+                rooms_number: 'string',
+                rooms_address: 'string',
+                rooms_lat: 'number',
+                rooms_lon: 'number',
+                rooms_seats: 'number',
+                rooms_type: 'string',
+                rooms_furniture: 'string',
+                rooms_href: 'string'
+            }
         },
-        keys: {
-            courses_dept: 'string',
-            courses_id: 'string',
-            courses_avg: 'number',
-            courses_instructor: 'string',
-            courses_title: 'string',
-            courses_pass: 'number',
-            courses_fail: 'number',
-            courses_audit: 'number',
-            courses_uuid: 'string'
+        courses: {
+            parseFile: data => {
+                return JSON.parse(data).result.map((entry: any) => {
+                    return {
+                        courses_dept: entry.Subject,
+                        courses_id: entry.Course,
+                        courses_avg: entry.Avg,
+                        courses_instructor: entry.Professor,
+                        courses_title: entry.Title,
+                        courses_pass: entry.Pass,
+                        courses_fail: entry.Fail,
+                        courses_audit: entry.Audit,
+                        courses_uuid: entry.id,
+                        courses_year: entry.Section == "overall" ? 1900 : entry.Year
+                    };
+                });
+            },
+            keys: {
+                courses_dept: 'string',
+                courses_id: 'string',
+                courses_avg: 'number',
+                courses_instructor: 'string',
+                courses_title: 'string',
+                courses_pass: 'number',
+                courses_fail: 'number',
+                courses_audit: 'number',
+                courses_uuid: 'string',
+                courses_year: 'number'
+            }
         }
-    }
 };
 
 export interface InsightResponse {
@@ -62,10 +182,10 @@ export interface Query {
 }
 
 export interface IsFilter {
-    IS: {[key: string]: string;};
+    IS: { [key: string]: string; };
 }
 
-export type Comparator = {[key: string]: number};
+export type Comparator = { [key: string]: number };
 
 export interface LtFilter {
     LT: Comparator;

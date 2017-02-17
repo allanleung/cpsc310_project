@@ -22,11 +22,13 @@ describe("Log", () => {
 
 describe("InsightFacade.addDataset", () => {
     let insightFacade: InsightFacade = null;
-    let content: string;
+    let courses: string;
+    let rooms: string;
 
     before(function() {
         this.timeout(10000);
-        content = fs.readFileSync('test/courses.zip').toString('base64');
+        courses = fs.readFileSync('test/courses.zip').toString('base64');
+        rooms = fs.readFileSync('test/rooms.zip').toString('base64');
     });
 
     beforeEach(() => {
@@ -37,9 +39,20 @@ describe("InsightFacade.addDataset", () => {
         insightFacade = null;
     });
 
-    it('should add an id to the dataset successfully', function() {
+    it('should add courses to the dataset successfully', function() {
         this.timeout(10000);
-        return insightFacade.addDataset("courses", content)
+        return insightFacade.addDataset("courses", courses)
+            .then((response) => {
+                expect(response).to.deep.eq({
+                    code: 204,
+                    body: {}
+                });
+            });
+    });
+
+    it('should add rooms to the dataset successfully', function() {
+        this.timeout(10000);
+        return insightFacade.addDataset("rooms", rooms)
             .then((response) => {
                 expect(response).to.deep.eq({
                     code: 204,
@@ -50,13 +63,13 @@ describe("InsightFacade.addDataset", () => {
 
     it('should add an id to the dataset successfully twice', function() {
         this.timeout(10000);
-        return insightFacade.addDataset("courses", content).then((response) => {
+        return insightFacade.addDataset("courses", courses).then((response) => {
             expect(response).to.deep.eq({
                 code: 204,
                 body: {}
             });
 
-            return insightFacade.addDataset("courses", content);
+            return insightFacade.addDataset("courses", courses);
         }).then((response) => {
             expect(response).to.deep.eq({
                 code: 201,
@@ -69,14 +82,14 @@ describe("InsightFacade.addDataset", () => {
         this.timeout(10000);
         DataController.resetCache();
         insightFacade = new InsightFacade(true);
-        return insightFacade.addDataset("courses", content).then((response) => {
+        return insightFacade.addDataset("courses", courses).then((response) => {
             expect(response).to.deep.eq({
                 code: 204,
                 body: {}
             });
 
             insightFacade = new InsightFacade(true);
-            return insightFacade.addDataset("courses", content);
+            return insightFacade.addDataset("courses", courses);
         }).then((response) => {
             expect(response).to.deep.eq({
                 code: 201,
@@ -139,8 +152,8 @@ describe("InsightFacade.Integration.performQuery", () => {
 
     before(function() {
         this.timeout(10000);
-        const content = fs.readFileSync('test/courses.zip').toString('base64');
-        return insightFacade.addDataset('courses', content);
+        const courses = fs.readFileSync('test/courses.zip').toString('base64');
+        return insightFacade.addDataset('courses', courses);
     });
 
     it('should return the correct result for a complex query', () => {
