@@ -7,9 +7,38 @@ export const cachePath = __dirname + '/data.json';
 
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
 
+export const geoUrlPrefix = 'http://skaha.cs.ubc.ca:11316/api/v1/team37/'; // + <ADDRESS>
+
 import * as parse5 from 'parse5';
 
+import * as http from 'http';
+
 import {parseRoomsZip} from './Rooms';
+
+export function promisify(url: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        http.get(url, response => {
+            if (response.statusCode === 200 && /^application\/json/.test(response.headers['content-type'])) {
+                response.setEncoding('utf8');
+                let rawData = '';
+
+                response.on('data', chunk => rawData += chunk);
+                response.on('error', e => reject(e));
+                response.on('end', () => {
+                    try {
+                        resolve(JSON.parse(rawData))
+                    } catch (e) {
+                        reject(e)
+                    }
+                });
+            } else {
+                const error = new Error(`Request failed: Status Code: ${response.statusCode}`);
+                response.resume();
+                reject(error)
+            }
+        }).on('error', e => reject(e))
+    })
+}
 
 export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: any[]) : parse5.AST.Default.Element[] {
     let elements: parse5.AST.Default.Element[] = [];
