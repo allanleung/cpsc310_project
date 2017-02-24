@@ -109,7 +109,7 @@ export const dataSetDefinitions: {
                     ]);
 
                     const shortname = canonicalName[0].attrs[1].value;
-                    const number = parseInt((<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim());
+                    const number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();
                     const seats = parseInt((<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim());
 
                     const name = shortname + "_" + number;
