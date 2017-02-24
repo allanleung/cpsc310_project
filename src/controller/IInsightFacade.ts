@@ -8,6 +8,9 @@ export const cachePath = __dirname + '/data.json';
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
 
 import * as parse5 from 'parse5';
+
+import {parseRoomsZip} from './Rooms';
+
 export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: any[]) : parse5.AST.Default.Element[] {
     let elements: parse5.AST.Default.Element[] = [];
 
@@ -43,7 +46,7 @@ export function isUnknownDataset (id: string) {
 
 export const dataSetDefinitions: {
     [dataSet: string]: {
-        parseFile: (data: string) => any[],
+        processZip: (zip: JSZip) => Promise<any[]>,
         keys: {
             [key: string]: string
         }
@@ -61,75 +64,7 @@ export const dataSetDefinitions: {
             // rooms_type: string; The room type (e.g., "Small Group").
             // rooms_furniture: string; The room type (e.g., "Classroom-Movable Tables & Chairs").
             // rooms_href: string; The link to full details online (e.g., "http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/DMP-201").
-            parseFile: data => {
-                // TODO: Move into implementation
-                // TODO: Fix room number format, Lookup address
-
-                let buildingDocument: parse5.AST.Default.Document = parse5.parse(data) as parse5.AST.Default.Document;
-                let canonicalName = getElementsByAttrs(buildingDocument, [
-                    {
-                        name: "rel",
-                        value: "canonical"
-                    }
-                ]);
-
-                let buildings = getElementsByAttrs(buildingDocument, [
-                    {
-                        name: "id",
-                        value: "^buildings-wrapper$"
-                    }
-                ]);
-                let buildingInfo = getElementsByAttrs(buildings[0], [
-                    {
-                        name: "class",
-                        value: "^field-content$"
-                    }
-                ]);
-
-                let classrooms = getElementsByAttrs(buildingDocument, [
-                    {
-                        name: "class",
-                        value: "^view view-buildings-and-classrooms view-id-buildings_and_classrooms .*"
-                    }
-                ]);
-
-                let rooms = getElementsByAttrs(classrooms[0], [
-                    {
-                        name: "class",
-                        value: "^(odd|even) .*"
-                    }
-                ]);
-
-                return rooms.map((room) => {
-                    let fields = getElementsByAttrs(room, [
-                        {
-                            name: "class",
-                            value: "^views-field .*"
-                        }
-                    ]);
-
-                    const shortname = canonicalName[0].attrs[1].value;
-                    const number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();
-                    const seats = parseInt((<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim());
-
-                    const name = shortname + "_" + number;
-
-                    return {
-                        rooms_fullname: (<parse5.AST.Default.TextNode>buildingInfo[0].childNodes[0]).value,
-                        rooms_shortname: shortname,
-                        rooms_name: name,
-                        rooms_number: number,
-                        rooms_address: (<parse5.AST.Default.TextNode>buildingInfo[1].childNodes[0]).value,
-                        rooms_lat: 'number',
-                        rooms_lon: 'number',
-                        rooms_seats: seats,
-                        rooms_type: (<parse5.AST.Default.TextNode>fields[3].childNodes[0]).value.trim(),
-                        rooms_furniture: (<parse5.AST.Default.TextNode>fields[2].childNodes[0]).value.trim(),
-                        rooms_href: (<parse5.AST.Default.Element>fields[0].childNodes[1]).attrs[0].value
-                    };
-
-                });
-            },
+            processZip: parseRoomsZip,
             keys: {
                 rooms_fullname: 'string',
                 rooms_shortname: 'string',
@@ -145,20 +80,40 @@ export const dataSetDefinitions: {
             }
         },
         courses: {
-            parseFile: data => {
-                return JSON.parse(data).result.map((entry: any) => {
-                    return {
-                        courses_dept: entry.Subject,
-                        courses_id: entry.Course,
-                        courses_avg: entry.Avg,
-                        courses_instructor: entry.Professor,
-                        courses_title: entry.Title,
-                        courses_pass: entry.Pass,
-                        courses_fail: entry.Fail,
-                        courses_audit: entry.Audit,
-                        courses_uuid: entry.id,
-                        courses_year: entry.Section == "overall" ? 1900 : entry.Year
-                    };
+            processZip: zip => {
+                const files: Promise<any[]>[] = [];
+
+                zip.forEach((path: string, file: JSZipObject) => {
+                    if (file.dir == true) {
+                        return;
+                    }
+
+                    files.push(file.async('string').then(data => {
+                        return JSON.parse(data).result.map((entry: any) => {
+                            return {
+                                courses_dept: entry.Subject,
+                                courses_id: entry.Course,
+                                courses_avg: entry.Avg,
+                                courses_instructor: entry.Professor,
+                                courses_title: entry.Title,
+                                courses_pass: entry.Pass,
+                                courses_fail: entry.Fail,
+                                courses_audit: entry.Audit,
+                                courses_uuid: entry.id,
+                                courses_year: entry.Section == "overall" ? 1900 : entry.Year
+                            };
+                        });
+                    }));
+                });
+
+                return Promise.all(files).then(data => {
+                    const allItems: any[] = [];
+
+                    for (let item of data) {
+                        allItems.push(...item);
+                    }
+
+                    return allItems;
                 });
             },
             keys: {
