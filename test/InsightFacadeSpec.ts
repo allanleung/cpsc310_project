@@ -300,4 +300,31 @@ describe("InsightFacade.performQuery", () => {
             }
         }))
     });
+
+    it('should not be able to perform query when dataset has been removed', () => {
+        return insightFacade.removeDataset('courses').then(response => {
+            expect(response.code).eq(204);
+
+            return insightFacade.performQuery({
+                WHERE: {
+                    IS: {
+                        courses_title: "hong kong cinema"
+                    }
+                },
+                OPTIONS: {
+                    COLUMNS: [
+                        "courses_title"
+                    ],
+                    FORM: "TABLE"
+                }
+            }).then(() => {
+                throw new Error("Test should have failed")
+            }, err => expect(err).to.deep.eq({
+                code: 400,
+                body: {
+                    error: 'No datasets'
+                }
+            }))
+        })
+    });
 });

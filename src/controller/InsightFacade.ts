@@ -91,6 +91,15 @@ export default class InsightFacade implements IInsightFacade {
 
             const rendered = this.queryController.executeQuery(<Query>parsingResult);
 
+            if (rendered === null) {
+                reject({
+                    code: 400,
+                    body: {
+                        error: "No datasets"
+                    }
+                })
+            }
+
             fulfill({
                 code: 200,
                 body: {

@@ -24,7 +24,10 @@ import DataController from "./DataController";
 export default class QueryController {
     constructor(readonly dataSet: DataController) {}
 
-    public executeQuery(query: Query): any[] {
+    public executeQuery(query: Query): any[] | null {
+        if (this.dataSet.isEmpty())
+            return null;
+
         const filteredItems = this.filterItems(query);
 
         if (query.hasOrder()) {
