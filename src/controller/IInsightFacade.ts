@@ -3,7 +3,6 @@
  * A class called InsightFacade, this should be in a file called InsightFacade.ts.
  * You should not change this interface at all or the test suite will not work.
  */
-import {isNullOrUndefined} from "util";
 export const cachePath = __dirname + '/data.json';
 
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
@@ -27,9 +26,9 @@ export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: a
 
     if (node.childNodes !== undefined) {
         for (let child of node.childNodes) {
-            var foundElements = getElementsByAttrs((<parse5.AST.Default.Element>child), attrs);
+            let foundElements = getElementsByAttrs((<parse5.AST.Default.Element>child), attrs);
 
-            for (var found of foundElements) {
+            for (let found of foundElements) {
                 elements.push(found);
             }
         }
