@@ -109,7 +109,8 @@ export const dataSetDefinitions: {
                     ]);
 
                     const shortname = canonicalName[0].attrs[1].value;
-                    const number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();
+                    const number = parseInt((<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim());
+                    const seats = parseInt((<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim());
 
                     const name = shortname + "_" + number;
 
@@ -121,7 +122,7 @@ export const dataSetDefinitions: {
                         rooms_address: (<parse5.AST.Default.TextNode>buildingInfo[1].childNodes[0]).value,
                         rooms_lat: 'number',
                         rooms_lon: 'number',
-                        rooms_seats: (<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim(),
+                        rooms_seats: seats,
                         rooms_type: (<parse5.AST.Default.TextNode>fields[3].childNodes[0]).value.trim(),
                         rooms_furniture: (<parse5.AST.Default.TextNode>fields[2].childNodes[0]).value.trim(),
                         rooms_href: (<parse5.AST.Default.Element>fields[0].childNodes[1]).attrs[0].value
