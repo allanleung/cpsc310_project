@@ -670,4 +670,38 @@ describe('QueryParser.parseQuery', () => {
             }
         )).to.be.null
     });
+
+    it('should fail when a query contains more than one dataset', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {
+                OR: [{
+                    AND: [
+                        {
+                            GT: {
+                                courses_avg: 90
+                            }
+                        },
+                        {
+                            IS: {
+                                rooms_shortname: "DMP"
+                            }
+                        }
+                    ]
+                }, {
+                    EQ: {
+                        courses_avg: 95
+                    }
+                }]
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: "courses_avg",
+                FORM: "TABLE"
+            }
+        })).to.be.null
+    })
 });

@@ -33,7 +33,12 @@ export default class QueryParser {
             return missing
         }
 
-        const filterTypesCorrect = this.verifyFilterDataTypes(datasets, query.WHERE);
+        const uniqueDatasets = this.removeDuplicates(datasets);
+
+        if (uniqueDatasets.length > 1)
+            return null;
+
+        const filterTypesCorrect = this.verifyFilterDataTypes(uniqueDatasets, query.WHERE);
 
         return filterTypesCorrect ? new Query(query.WHERE, query.OPTIONS) : null
     }
@@ -57,6 +62,10 @@ export default class QueryParser {
             return null;
 
         return [...optionsDatasets, ...filterDatasets]
+    }
+
+    private static removeDuplicates(datasets: string[]): string[] {
+        return datasets.filter((value, index) => datasets.indexOf(value) === index)
     }
 
     private static findMissingDatasets(datasets: string[]): string[]|any {
