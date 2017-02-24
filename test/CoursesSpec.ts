@@ -202,8 +202,6 @@ describe("CoursesSpec", () => {
         });
     });
 
-
-
     it('should return the correct result for a simple query', () => {
         return insightFacade.performQuery({
             "WHERE":{
@@ -275,7 +273,6 @@ describe("CoursesSpec", () => {
                             { courses_dept: 'math', courses_avg: 99.78 } ] }})
         })
     });
-
 
     it('should work correctly', () => {
         return insightFacade.performQuery({
@@ -5122,5 +5119,27 @@ describe("CoursesSpec", () => {
             code: 200,
             body: {"render":"TABLE","result":[{"courses_title":"hmn-cmpt intract","courses_uuid":1378,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":1379,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":46805,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":46806,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":50001,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":50002,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":52117,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":52118,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":61241,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":61242,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":62478,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":62479,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":72469,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":72470,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":83537,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":83538,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":90648,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":90649,"courses_id":"544"}]}
         }));
+    });
+
+    it('should be able to find the year a course is offered in', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "GT":{
+                    "courses_avg":97
+                }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_avg",
+                    "courses_year"
+                ],
+                "ORDER":"courses_avg",
+                "FORM":"TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {"render":"TABLE","result":[{"courses_dept":"epse","courses_avg":97.09,"courses_year":2007},{"courses_dept":"math","courses_avg":97.09,"courses_year":1900},{"courses_dept":"math","courses_avg":97.09,"courses_year":2010},{"courses_dept":"epse","courses_avg":97.09,"courses_year":1900},{"courses_dept":"math","courses_avg":97.25,"courses_year":1900},{"courses_dept":"math","courses_avg":97.25,"courses_year":2016},{"courses_dept":"epse","courses_avg":97.29,"courses_year":1900},{"courses_dept":"epse","courses_avg":97.29,"courses_year":2010},{"courses_dept":"nurs","courses_avg":97.33,"courses_year":1900},{"courses_dept":"nurs","courses_avg":97.33,"courses_year":2010},{"courses_dept":"epse","courses_avg":97.41,"courses_year":2011},{"courses_dept":"epse","courses_avg":97.41,"courses_year":1900},{"courses_dept":"cnps","courses_avg":97.47,"courses_year":2009},{"courses_dept":"cnps","courses_avg":97.47,"courses_year":1900},{"courses_dept":"math","courses_avg":97.48,"courses_year":1900},{"courses_dept":"math","courses_avg":97.48,"courses_year":2010},{"courses_dept":"educ","courses_avg":97.5,"courses_year":2015},{"courses_dept":"nurs","courses_avg":97.53,"courses_year":1900},{"courses_dept":"nurs","courses_avg":97.53,"courses_year":2015},{"courses_dept":"epse","courses_avg":97.67,"courses_year":2007},{"courses_dept":"epse","courses_avg":97.69,"courses_year":2013},{"courses_dept":"epse","courses_avg":97.78,"courses_year":2009},{"courses_dept":"crwr","courses_avg":98,"courses_year":2013},{"courses_dept":"crwr","courses_avg":98,"courses_year":2013},{"courses_dept":"epse","courses_avg":98.08,"courses_year":2009},{"courses_dept":"nurs","courses_avg":98.21,"courses_year":2015},{"courses_dept":"nurs","courses_avg":98.21,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.36,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.45,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.45,"courses_year":2011},{"courses_dept":"nurs","courses_avg":98.5,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.5,"courses_year":2013},{"courses_dept":"epse","courses_avg":98.58,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.58,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.58,"courses_year":2010},{"courses_dept":"epse","courses_avg":98.58,"courses_year":2012},{"courses_dept":"epse","courses_avg":98.7,"courses_year":2009},{"courses_dept":"nurs","courses_avg":98.71,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.71,"courses_year":2011},{"courses_dept":"eece","courses_avg":98.75,"courses_year":1900},{"courses_dept":"eece","courses_avg":98.75,"courses_year":2009},{"courses_dept":"epse","courses_avg":98.76,"courses_year":2012},{"courses_dept":"epse","courses_avg":98.76,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.8,"courses_year":2014},{"courses_dept":"spph","courses_avg":98.98,"courses_year":1900},{"courses_dept":"spph","courses_avg":98.98,"courses_year":2015},{"courses_dept":"cnps","courses_avg":99.19,"courses_year":2012},{"courses_dept":"math","courses_avg":99.78,"courses_year":1900},{"courses_dept":"math","courses_avg":99.78,"courses_year":2009}]}
+        }))
     });
 });
