@@ -6,6 +6,10 @@
 import {dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
 import Query, {Filter, QueryOptions} from "./Query";
 
+export class ParsingResult {
+    constructor(readonly query: Query, readonly datasets: string[]) {}
+}
+
 export default class QueryParser {
     readonly WHERE: Filter;
     readonly OPTIONS: QueryOptions;
@@ -16,7 +20,7 @@ export default class QueryParser {
      * @param query the query to parse
      * @returns {any} a new QueryParser, or a list of missing dataSets, or null if the query is invalid
      */
-    public static parseQuery(query: any): Query | string[] | null {
+    public static parseQuery(query: any): ParsingResult | null {
         if (!this.verifyToplevelQueryObject(query))
             return null;
 
@@ -25,14 +29,6 @@ export default class QueryParser {
         if (datasets === null)
             return null;
 
-        const missing = this.findMissingDatasets(datasets);
-
-        if (missing === null) {
-            return null
-        } else if (missing.length > 0) {
-            return missing
-        }
-
         const uniqueDatasets = this.removeDuplicates(datasets);
 
         if (uniqueDatasets.length > 1)
@@ -40,7 +36,10 @@ export default class QueryParser {
 
         const filterTypesCorrect = this.verifyFilterDataTypes(uniqueDatasets, query.WHERE);
 
-        return filterTypesCorrect ? new Query(query.WHERE, query.OPTIONS) : null
+        if (!filterTypesCorrect)
+            return null;
+
+        return new ParsingResult(new Query(query.WHERE, query.OPTIONS), uniqueDatasets);
     }
 
     private static verifyToplevelQueryObject(query: any): boolean {
@@ -68,13 +67,9 @@ export default class QueryParser {
         return datasets.filter((value, index) => datasets.indexOf(value) === index)
     }
 
-    private static findMissingDatasets(datasets: string[]): string[]|any {
-        return datasets.filter(dataset => isUnknownDataset(dataset))
-    }
-
     private static verifyFilterDataTypes(datasets: any[], filter: any) {
         return datasets.reduce((acc, dataset) => {
-            return acc && this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
+            return acc && isUnknownDataset(dataset) || this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
         }, true);
     }
 

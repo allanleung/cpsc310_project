@@ -35,10 +35,6 @@ export default class DataController {
         }
     }
 
-    public isEmpty(): boolean {
-        return this.dataSet.size === 0
-    }
-
     public forEach(callback: (value: any[], key: string) => void) {
         this.dataSet.forEach(callback);
     }

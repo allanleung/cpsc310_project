@@ -1,11 +1,9 @@
 ///<reference path="IInsightFacade.ts"/>
-import {isArray} from "util";
 import {IInsightFacade, InsightResponse, dataSetDefinitions, isUnknownDataset} from "./IInsightFacade";
 import * as JSZip from "jszip";
 import QueryParser from "./QueryParser";
 import DataController from "./DataController";
 import QueryController from "./QueryController";
-import Query from "./Query";
 
 export default class InsightFacade implements IInsightFacade {
     private readonly dataController: DataController;
@@ -80,16 +78,20 @@ export default class InsightFacade implements IInsightFacade {
                         error: "Malformed query"
                     }
                 })
-            } else if (isArray(parsingResult)) {
+            }
+
+            const missing = this.queryController.findMissingDatasets(parsingResult.datasets);
+
+            if (missing.length > 0) {
                 reject({
                     code: 424,
                     body: {
-                        missing: parsingResult
+                        missing
                     }
                 })
             }
 
-            const rendered = this.queryController.executeQuery(<Query>parsingResult);
+            const rendered = this.queryController.executeQuery(parsingResult.query);
 
             if (rendered === null) {
                 reject({

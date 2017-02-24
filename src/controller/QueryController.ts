@@ -22,12 +22,9 @@ import DataController from "./DataController";
  */
 
 export default class QueryController {
-    constructor(readonly dataSet: DataController) {}
+    constructor(private readonly dataSet: DataController) {}
 
-    public executeQuery(query: Query): any[] | null {
-        if (this.dataSet.isEmpty())
-            return null;
-
+    public executeQuery(query: Query): any[] {
         const filteredItems = this.filterItems(query);
 
         if (query.hasOrder()) {
@@ -35,6 +32,10 @@ export default class QueryController {
         }
 
         return QueryController.renderItems(filteredItems, query.OPTIONS.COLUMNS);
+    }
+
+    public findMissingDatasets(datasets: string[]): string[] {
+        return datasets.filter(item => !this.dataSet.hasDataset(item));
     }
 
     private filterItems(query: Query): any[] {

@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import QueryParser from "../src/controller/QueryParser";
 import Query from "../src/controller/Query";
+import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
     it('should produce a correct query when the query is valid', () => {
@@ -19,7 +20,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        })).to.deep.eq(new Query(
+        })).to.deep.eq(new ParsingResult(new Query(
             {
                 "IS": {
                     courses_id: "325"
@@ -34,7 +35,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ))
+        ), ['courses']))
     });
 
     it('should accept queries with room keys', () => {
@@ -51,7 +52,7 @@ describe('QueryParser.parseQuery', () => {
                 "ORDER": "rooms_name",
                 "FORM": "TABLE"
             }
-        })).to.deep.eq(new Query(
+        })).to.deep.eq(new ParsingResult(new Query(
             {
                 "IS": {
                     "rooms_name": "DMP_*"
@@ -64,7 +65,7 @@ describe('QueryParser.parseQuery', () => {
                 "ORDER": "rooms_name",
                 "FORM": "TABLE"
             }
-        ))
+        ), ['rooms']));
     });
 
     it('should fail when given a query without an OPTIONS', () => {
@@ -103,14 +104,29 @@ describe('QueryParser.parseQuery', () => {
             },
             OPTIONS: {
                 COLUMNS: [
-                    "courses_dept",
-                    "fake_instructor",
-                    "courses_avg"
+                    "fake_instructor"
                 ],
                 ORDER: "fake_instructor",
                 FORM: "TABLE"
             }
-        })).to.deep.eq(["fake", "fake"]);
+        })).to.deep.eq(new ParsingResult(new Query(
+            {
+                OR: [
+                    {
+                        IS: {
+                            fake_instructor: "*pamela*"
+                        }
+                    }
+                ]
+            },
+            {
+                COLUMNS: [
+                    "fake_instructor"
+                ],
+                ORDER: "fake_instructor",
+                FORM: "TABLE"
+            }
+        ), ['fake']));
     });
 
     it('should fail when given an undefined query', () => {
@@ -132,12 +148,27 @@ describe('QueryParser.parseQuery', () => {
             },
             OPTIONS: {
                 COLUMNS: [
-                    "courses_avg"
+                    "fake_avgs"
                 ],
-                ORDER: "courses_avg",
+                ORDER: "fake_avgs",
                 FORM: "TABLE"
             }
-        })).to.deep.eq(["fake"])
+        })).to.deep.eq(new ParsingResult(new Query(
+            {
+                NOT: {
+                    IS: {
+                        fake_avgs: "325"
+                    }
+                }
+            },
+            {
+                COLUMNS: [
+                    "fake_avgs"
+                ],
+                ORDER: "fake_avgs",
+                FORM: "TABLE"
+            }
+        ), ['fake']))
     });
 
     it('should fail with a key that is not the right type in the dataset', () => {
@@ -206,67 +237,6 @@ describe('QueryParser.parseQuery', () => {
                 FORM: "TABLE"
             }
         })).to.be.null
-    });
-
-    it('should produce a missing dataset in order', () => {
-        return expect(QueryParser.parseQuery({
-            WHERE: {
-                IS: {
-                    courses_id: "325"
-                }
-            },
-            OPTIONS: {
-                COLUMNS: [
-                    "courses_avg",
-                    "fake_id"
-                ],
-                ORDER: "fake_id",
-                FORM: "TABLE"
-            }
-        })).to.deep.eq(['fake'])
-    });
-
-    it('should produce a missing dataset in an AND', () => {
-        return expect(QueryParser.parseQuery({
-            WHERE: {
-                AND: [
-                    {
-                        IS: {
-                            "fake_id": "325"
-                        }
-                    },
-                    {
-                        IS: {
-                            "courses_id": "325"
-                        }
-                    }
-                ]
-            },
-            OPTIONS: {
-                COLUMNS: [
-                    "courses_avg",
-                ],
-                ORDER: "courses_avg",
-                FORM: "TABLE"
-            }
-        })).to.deep.eq(['fake'])
-    });
-
-    it('should produce a missing dataset in an IS', () => {
-        return expect(QueryParser.parseQuery({
-            WHERE: {
-                IS: {
-                    "fake_id": "325"
-                },
-            },
-            OPTIONS: {
-                COLUMNS: [
-                    "courses_avg",
-                ],
-                ORDER: "courses_avg",
-                FORM: "TABLE"
-            }
-        })).to.deep.eq(['fake'])
     });
 
     it('should fail when WHERE has more than one item', () => {
@@ -620,7 +590,7 @@ describe('QueryParser.parseQuery', () => {
         )).to.be.null
     });
 
-    it('should return missing IDs if columns include non-courses ids', () => {
+    it('should fail if columns include non-courses ids', () => {
         return expect(QueryParser.parseQuery({
                 WHERE: {
                     "IS": {
@@ -638,7 +608,7 @@ describe('QueryParser.parseQuery', () => {
                     FORM: "TABLE",
                 }
             }
-        )).to.deep.eq(['instructors', 'fake'])
+        )).to.be.null
     });
 
     it('should fail if ORDER is not in COLUMNS', () => {

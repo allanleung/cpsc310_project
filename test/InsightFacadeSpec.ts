@@ -261,9 +261,9 @@ describe("InsightFacade.performQuery", () => {
             },
             OPTIONS: {
                 COLUMNS: [
-                    "courses_avg"
+                    "fake_avgs"
                 ],
-                ORDER: "courses_avg",
+                ORDER: "fake_avgs",
                 FORM: "TABLE"
             }
         }).then(() => {
@@ -294,9 +294,9 @@ describe("InsightFacade.performQuery", () => {
         }).then(() => {
             throw new Error("Test should have failed")
         }, err => expect(err).to.deep.eq({
-            code: 400,
+            code: 424,
             body: {
-                error: 'No datasets'
+                missing: ['courses']
             }
         }))
     });
@@ -320,9 +320,9 @@ describe("InsightFacade.performQuery", () => {
             }).then(() => {
                 throw new Error("Test should have failed")
             }, err => expect(err).to.deep.eq({
-                code: 400,
+                code: 424,
                 body: {
-                    error: 'No datasets'
+                    missing: ['courses']
                 }
             }))
         })
