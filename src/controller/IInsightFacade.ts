@@ -108,10 +108,16 @@ export const dataSetDefinitions: {
                         }
                     ]);
 
+                    const shortname = canonicalName[0].attrs[1].value;
+                    const number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();
+
+                    const name = shortname + "_" + number;
+
                     return {
                         rooms_fullname: (<parse5.AST.Default.TextNode>buildingInfo[0].childNodes[0]).value,
-                        rooms_shortname: canonicalName[0].attrs[1].value,
-                        rooms_number: (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim(),
+                        rooms_shortname: shortname,
+                        rooms_name: name,
+                        rooms_number: number,
                         rooms_address: (<parse5.AST.Default.TextNode>buildingInfo[1].childNodes[0]).value,
                         rooms_lat: 'number',
                         rooms_lon: 'number',
@@ -126,6 +132,7 @@ export const dataSetDefinitions: {
             keys: {
                 rooms_fullname: 'string',
                 rooms_shortname: 'string',
+                rooms_name: 'string',
                 rooms_number: 'string',
                 rooms_address: 'string',
                 rooms_lat: 'number',

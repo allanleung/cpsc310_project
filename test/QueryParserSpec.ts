@@ -37,6 +37,36 @@ describe('QueryParser.parseQuery', () => {
         ))
     });
 
+    it('should accept queries with room keys', () => {
+        return expect(QueryParser.parseQuery({
+            "WHERE": {
+                "IS": {
+                    "rooms_name": "DMP_*"
+                }
+            },
+            "OPTIONS": {
+                "COLUMNS": [
+                    "rooms_name"
+                ],
+                "ORDER": "rooms_name",
+                "FORM": "TABLE"
+            }
+        })).to.deep.eq(new Query(
+            {
+                "IS": {
+                    "rooms_name": "DMP_*"
+                }
+            },
+            {
+                "COLUMNS": [
+                    "rooms_name"
+                ],
+                "ORDER": "rooms_name",
+                "FORM": "TABLE"
+            }
+        ))
+    });
+
     it('should fail when given a query without an OPTIONS', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
