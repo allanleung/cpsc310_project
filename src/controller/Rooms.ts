@@ -77,6 +77,22 @@ function extractHREF(node: parse5.AST.Default.Element): string {
     throw new Error("Failed to find href");
 }
 
+function getRoomEntries (buildingDocument: parse5.AST.Default.Document) : parse5.AST.Default.ParentNode[] {
+    let classrooms = getElementsByAttrs(buildingDocument, [
+        {
+            name: "class",
+            value: "^view view-buildings-and-classrooms view-id-buildings_and_classrooms .*"
+        }
+    ]);
+
+    return getElementsByAttrs(classrooms[0], [
+        {
+            name: "class",
+            value: "^(odd|even).*"
+        }
+    ]);
+}
+
 export function parseRoomsFile (data: string): Promise<any[]> {
     let buildingDocument: parse5.AST.Default.Document = parse5.parse(data) as parse5.AST.Default.Document;
     let canonicalName = getElementsByAttrs(buildingDocument, [
@@ -92,6 +108,7 @@ export function parseRoomsFile (data: string): Promise<any[]> {
             value: "^buildings-wrapper$"
         }
     ]);
+
     let buildingInfo = getElementsByAttrs(buildings[0], [
         {
             name: "class",
@@ -99,45 +116,31 @@ export function parseRoomsFile (data: string): Promise<any[]> {
         }
     ]);
 
-    let classrooms = getElementsByAttrs(buildingDocument, [
-        {
-            name: "class",
-            value: "^view view-buildings-and-classrooms view-id-buildings_and_classrooms .*"
+    const rooms_shortname = canonicalName[0].attrs[1].value;
+    const rooms_address = (<parse5.AST.Default.TextNode>buildingInfo[1].childNodes[0]).value;
+
+    const url = geoUrlPrefix + encodeURI(rooms_address);
+
+    return Promise.resolve(promisify(url)).then((responseObject) => {
+        const response = <GeoResponse>responseObject;
+
+        if (isGeoResponseError(response)) {
+            throw new Error(response.error)
         }
-    ]);
 
-    let rooms = getElementsByAttrs(classrooms[0], [
-        {
-            name: "class",
-            value: "^(odd|even).*"
-        }
-    ]);
+        return getRoomEntries(buildingDocument).map(room => {
+            const fields = getElementsByAttrs(room, [
+                {
+                    name: "class",
+                    value: "^views-field .*"
+                }
+            ]);
 
-    return Promise.all(rooms.map(room => {
-        const fields = getElementsByAttrs(room, [
-            {
-                name: "class",
-                value: "^views-field .*"
-            }
-        ]);
+            const rooms_number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();
+            const rooms_seats = parseInt((<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim());
 
-        const rooms_shortname = canonicalName[0].attrs[1].value;
-        const rooms_number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();
-        const rooms_seats = parseInt((<parse5.AST.Default.TextNode>fields[1].childNodes[0]).value.trim());
-
-        const rooms_name = rooms_shortname + "_" + rooms_number;
-
-        const rooms_address = (<parse5.AST.Default.TextNode>buildingInfo[1].childNodes[0]).value;
-
-        const url = geoUrlPrefix + encodeURI(rooms_address);
-
-        return promisify(url).then(responseObject => {
-            const response = <GeoResponse>responseObject;
-
-            if (isGeoResponseError(response)) {
-                throw new Error(response.error)
-            }
-
+            const rooms_name = rooms_shortname + "_" + rooms_number;
+            
             return {
                 rooms_fullname: (<parse5.AST.Default.TextNode>buildingInfo[0].childNodes[0]).value,
                 rooms_shortname,
@@ -151,6 +154,6 @@ export function parseRoomsFile (data: string): Promise<any[]> {
                 rooms_furniture: (<parse5.AST.Default.TextNode>fields[2].childNodes[0]).value.trim(),
                 rooms_href: (<parse5.AST.Default.Element>fields[0].childNodes[1]).attrs[0].value
             }
-        })
-    }))
+        });
+    });
 }
