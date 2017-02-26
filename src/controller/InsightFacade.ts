@@ -1,11 +1,9 @@
 ///<reference path="IInsightFacade.ts"/>
-import {isArray} from "util";
 import {IInsightFacade, InsightResponse, dataSetDefinitions, isUnknownDataset} from "./IInsightFacade";
 import * as JSZip from "jszip";
 import QueryParser from "./QueryParser";
 import DataController from "./DataController";
 import QueryController from "./QueryController";
-import Query from "./Query";
 
 export default class InsightFacade implements IInsightFacade {
     private readonly dataController: DataController;
@@ -28,7 +26,7 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             new JSZip().loadAsync(content, {base64: true})
-                .then(zip => this.processZipFile(id, zip).then(allItems => {
+                .then(zip => InsightFacade.processZipFile(id, zip).then(allItems => {
                     const statusCode = this.isNewDataset(id) ? 204 : 201;
 
                     this.dataController.addDataset(id, allItems);
@@ -80,16 +78,29 @@ export default class InsightFacade implements IInsightFacade {
                         error: "Malformed query"
                     }
                 })
-            } else if (isArray(parsingResult)) {
+            }
+
+            const missing = this.queryController.findMissingDatasets(parsingResult.datasets);
+
+            if (missing.length > 0) {
                 reject({
                     code: 424,
                     body: {
-                        missing: parsingResult
+                        missing
                     }
                 })
             }
 
-            const rendered = this.queryController.executeQuery(<Query>parsingResult);
+            const rendered = this.queryController.executeQuery(parsingResult.query);
+
+            if (rendered === null) {
+                reject({
+                    code: 400,
+                    body: {
+                        error: "No datasets"
+                    }
+                })
+            }
 
             fulfill({
                 code: 200,
@@ -106,26 +117,8 @@ export default class InsightFacade implements IInsightFacade {
         return !this.dataController.hasDataset(id)
     }
 
-    private processZipFile(id: string, zip: JSZip): Promise<any[]> {
-        const files: Promise<any[]>[] = [];
-
-        zip.forEach((path: string, file: JSZipObject) => {
-            if (file.dir == true) {
-                return;
-            }
-
-            files.push(file.async('string').then(dataSetDefinitions[id].parseFile));
-        });
-
-        return Promise.all(files).then(data => {
-            const allItems: any[] = [];
-
-            for (let item of data) {
-                allItems.push(...item);
-            }
-
-            return allItems;
-        });
+    private static processZipFile(id: string, zip: JSZip): Promise<any[]> {
+        return dataSetDefinitions[id].processZip(zip)
     }
 
     /**
