@@ -172,7 +172,7 @@ export function requestPromise(url: string): Promise<any> {
     })
 }
 
-export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attributes: any[]) : parse5.AST.Default.Element[] {
+export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attributes: any[]): parse5.AST.Default.Element[] {
     const matchingElements: parse5.AST.Default.Element[] = [];
 
     const element = node as parse5.AST.Default.Element;
@@ -194,7 +194,7 @@ export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attribut
     return matchingElements;
 }
 
-export function isUnknownDataset (id: string) {
+export function isUnknownDataset (id: string): boolean {
     return !(id in dataSetDefinitions);
 }
 
@@ -236,7 +236,7 @@ function createCoursesEntry(entry: any): any {
     }
 }
 
-function hasMatchingAttributes(element: parse5.AST.Default.Element, attributes: any[]) {
+function hasMatchingAttributes(element: parse5.AST.Default.Element, attributes: any[]): boolean {
     return attributes.every(attribute => {
         return element.attrs.some(elementAttribute => isMatchingAttribute(attribute, elementAttribute));
     });
