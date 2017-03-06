@@ -5,16 +5,18 @@
  * saner interface to the query information, once all the invariants have been verified.
  */
 export default class Query {
-    public readonly WHERE: Filter;
-    public readonly OPTIONS: QueryOptions;
-
-    constructor(WHERE: Filter, OPTIONS: QueryOptions) {
-        this.WHERE = WHERE;
-        this.OPTIONS = OPTIONS;
-    }
+    constructor(
+        public readonly WHERE: Filter,
+        public readonly OPTIONS: QueryOptions,
+        public readonly TRANSFORMATIONS?: Transformations
+    ) {}
 
     public hasOrder(): boolean {
         return typeof this.OPTIONS.ORDER === 'string';
+    }
+
+    public hasTransformations(): boolean {
+        return typeof this.TRANSFORMATIONS === 'object';
     }
 }
 
@@ -22,6 +24,57 @@ export interface QueryOptions {
     COLUMNS: string[];
     ORDER?: string;
     FORM: string;
+}
+
+export interface Transformations {
+    GROUP: string[];
+    APPLY: Apply;
+}
+
+export interface Apply {
+    [key: string]: ApplyFunction
+}
+
+export type ApplyFunction = ApplyMax | ApplyMin | ApplyAvg | ApplyCount | ApplySum;
+
+export interface ApplyMax {
+    MAX: string
+}
+
+export interface ApplyMin {
+    MIN: string
+}
+
+export interface ApplyAvg {
+    AVG: string
+}
+
+export interface ApplyCount {
+    COUNT: string
+}
+
+export interface ApplySum {
+    SUM: string
+}
+
+export function isApplyMax(apply: ApplyFunction): apply is ApplyMax {
+    return typeof (<ApplyMax>apply).MAX === 'string'
+}
+
+export function isApplyMin(apply: ApplyFunction): apply is ApplyMin {
+    return typeof (<ApplyMin>apply).MIN === 'string'
+}
+
+export function isApplyAvg(apply: ApplyFunction): apply is ApplyAvg {
+    return typeof (<ApplyAvg>apply).AVG === 'string'
+}
+
+export function isApplyCount(apply: ApplyFunction): apply is ApplyCount {
+    return typeof (<ApplyCount>apply).COUNT === 'string'
+}
+
+export function isApplySum(apply: ApplyFunction): apply is ApplySum {
+    return typeof (<ApplySum>apply).SUM === 'string'
 }
 
 export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
