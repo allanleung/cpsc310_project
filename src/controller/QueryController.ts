@@ -34,8 +34,8 @@ export default class QueryController {
         return QueryController.renderItems(filteredItems, query.OPTIONS.COLUMNS);
     }
 
-    public findMissingDatasets(datasets: string[]): string[] {
-        return datasets.filter(item => !this.dataSet.hasDataset(item));
+    public isMissingDataset(dataset: string): boolean {
+        return !this.dataSet.hasDataset(dataset);
     }
 
     private filterItems(query: Query): any[] {
