@@ -4,25 +4,26 @@
  * Contains the class for QueryRequest, which is responsible for parsing Queries.
  */
 import {dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
-import Query from "./Query";
-import {Transformations} from "./Query";
-import {isApplyCount} from "./Query";
-import {isApplyMax} from "./Query";
-import {isApplyMin} from "./Query";
-import {isApplyAvg} from "./Query";
-import {Filter} from "./Query";
-import {isAndFilter} from "./Query";
-import {isOrFilter} from "./Query";
-import {isNotFilter} from "./Query";
-import {isLtFilter} from "./Query";
-import {isGtFilter} from "./Query";
-import {isEqFilter} from "./Query";
-import {isIsFilter} from "./Query";
-import {Comparator} from "./Query";
-import {Logic} from "./Query";
-import {QueryOptions} from "./Query";
-import {Apply} from "./Query";
-import {ApplyFunction} from "./Query";
+import Query, {
+    Transformations,
+    isApplyCount,
+    isApplyMax,
+    isApplyMin,
+    isApplyAvg,
+    Filter,
+    isAndFilter,
+    isOrFilter,
+    isNotFilter,
+    isLtFilter,
+    isGtFilter,
+    isEqFilter,
+    isIsFilter,
+    Comparator,
+    Logic,
+    QueryOptions,
+    Apply,
+    ApplyFunction
+} from "./Query";
 
 export class ParsingResult {
     constructor(readonly query: Query, readonly dataset: string) {}
@@ -98,7 +99,7 @@ export default class QueryParser {
     }
 
     private static extractApplyKeys(transformations: Transformations): string[] {
-        return transformations.APPLY.map((entry: any) => Object.keys(entry)[0])
+        return transformations.APPLY.map(entry => Object.keys(entry)[0])
     }
 
     private static verifyOptions(options: QueryOptions, applyKeys: string[], keySet: {[key: string]: string}): boolean {
