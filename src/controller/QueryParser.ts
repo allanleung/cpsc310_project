@@ -28,6 +28,7 @@ export default class QueryParser {
         if (!this.verifyToplevelQueryObject(query))
             return null;
 
+        // extractAllDatasets is also tasked with checking syntax, maybe change that
         const datasets = this.extractAllDatasets(query);
 
         if (datasets === null)
@@ -47,6 +48,8 @@ export default class QueryParser {
             if (!this.verifyTransformations(dataset, query.TRANSFORMATIONS))
                 return null;
         }
+
+        const applyKeys = this.extractApplyKeys(query.TRANSFORMATIONS);
 
         return new ParsingResult(new Query(query.WHERE, query.OPTIONS), dataset);
     }
@@ -87,12 +90,23 @@ export default class QueryParser {
 
     private static verifyTransformations(dataset: string, transformations: any): boolean {
         // two things to do here: all GROUP entries should be found in a dataset
-        // APPLY keys should either not have an underscore, or be found in a dataset
+        // APPLY entries should reference datasets that exist
         const groupCorrect = this.verifyGroup(transformations.GROUP, dataSetDefinitions[dataset].keys);
 
         const applyCorrect = this.verifyApply(transformations.APPLY, dataSetDefinitions[dataset].keys);
 
         return groupCorrect && applyCorrect;
+    }
+
+    private static extractApplyKeys(transformations: any): string[] {
+        if (transformations === null || typeof transformations !== 'object')
+            return [];
+
+        return transformations.APPLY.map((entry: any) => Object.keys(entry)[0])
+    }
+
+    private static verifyOptions(options: any, applyKeys: string[], keySet: {[key: string]: string}): boolean {
+        return false;
     }
 
     private static verifyGroup(group: any, keySet: {[key: string]: string}): boolean {
@@ -112,13 +126,10 @@ export default class QueryParser {
                 .every(datasetIndex => datasetIndex !== -1)
     }
 
-    private static verifyApply(apply: any, keys: {[key: string]: string}): boolean {
-        if (apply === null || typeof apply !== 'object')
-            return false;
+    private static verifyApply(apply: any[], keys: {[key: string]: string}): boolean {
+        const applyKeys = apply.map(entry => Object.keys(entry)[0]);
 
-        const applyKeys = Object.keys(apply);
-
-        const applyValues = applyKeys.map(key => apply[key]);
+        const applyValues = apply.map(entry => entry[Object.keys(entry)[0]]);
 
         const applyKeysCorrect = applyKeys.every(key => key.indexOf('_') !== -1);
 
@@ -171,7 +182,7 @@ export default class QueryParser {
 
             const orderMatches = options.ORDER.match(keyRegex);
 
-            if (orderMatches === null)
+            if (orderMatches === null && options.ORDER.indexOf('_') !== -1)
                 return null;
 
             if (options.COLUMNS.indexOf(options.ORDER) === -1)
@@ -179,12 +190,16 @@ export default class QueryParser {
         }
 
         return options.COLUMNS.reduce((acc: string[], item: string) => {
-            const matches = item.match(keyRegex);
-
-            if (matches === null || acc === null)
+            if (acc === null)
                 return null;
 
-            acc.push(matches[1]);
+            const matches = item.match(keyRegex);
+
+            if (matches === null && item.indexOf('_') !== -1) {
+                return null;
+            } else if (matches !== null) {
+                acc.push(matches[1]);
+            }
 
             return acc;
         }, []);
@@ -230,6 +245,46 @@ export default class QueryParser {
             return [];
         }
 
+        if (!(transformations.APPLY instanceof Array))
+            return null;
+
+        if (transformations.APPLY.length < 1)
+            return null;
+
+        const applyDatasets = transformations.APPLY
+            .map((applyKey: any) => {
+                if (typeof applyKey !== 'object' || applyKey === null)
+                    return null;
+
+                if (Object.keys(applyKey).length !== 1)
+                    return null;
+
+                const key = Object.keys(applyKey)[0];
+
+                if (key.indexOf('_') !== -1)
+                    return null;
+
+                const value = applyKey[key];
+
+                if (!isApplyFunction(value))
+                    return null;
+
+                if (Object.keys(value).length !== 1)
+                    return null;
+
+                const datasetKey = (<any>value)[Object.keys(value)[0]];
+
+                if (typeof datasetKey !== 'string')
+                    return null;
+
+                const matches = datasetKey.match(keyRegex);
+
+                if (matches === null)
+                    return null;
+
+                return matches[1];
+            });
+
         if (!(transformations.GROUP instanceof Array))
             return null;
 
@@ -251,7 +306,10 @@ export default class QueryParser {
         if (groupDatasets.indexOf(null) !== -1)
             return null;
 
-        return groupDatasets
+        if (applyDatasets.indexOf(null) !== -1)
+            return null;
+
+        return [...groupDatasets, ...applyDatasets]
     }
 
     /**

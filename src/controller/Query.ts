@@ -29,7 +29,7 @@ export interface QueryOptions {
 
 export interface Transformations {
     GROUP: string[];
-    APPLY: Apply;
+    APPLY: Apply[];
 }
 
 export interface Apply {
@@ -60,6 +60,12 @@ export interface ApplySum {
 
 export function isApplyFunction(item: any): item is ApplyFunction {
     const apply = <ApplyFunction>item;
+
+    if (typeof item !== 'object' || item === null)
+        return false;
+
+    if (Object.keys(item).length !== 1)
+        return false;
 
     return isApplyMax(apply) || isApplyMin(apply) || isApplyAvg(apply) || isApplyCount(apply) || isApplySum(apply)
 }
