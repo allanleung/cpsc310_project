@@ -4,16 +4,20 @@
  * Contains the class for QueryRequest, which is responsible for parsing Queries.
  */
 import {dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
-import Query, {Filter, QueryOptions} from "./Query";
+import Query from "./Query";
+import {Transformations} from "./Query";
+import {isApplyFunction} from "./Query";
+import {isApplyCount} from "./Query";
+import {isApplyMax} from "./Query";
+import {isApplyMin} from "./Query";
+import {isApplyAvg} from "./Query";
+import {isApplySum} from "./Query";
 
 export class ParsingResult {
-    constructor(readonly query: Query, readonly datasets: string[]) {}
+    constructor(readonly query: Query, readonly dataset: string) {}
 }
 
 export default class QueryParser {
-    readonly WHERE: Filter;
-    readonly OPTIONS: QueryOptions;
-
     /**
      * Parses a query into a new Query object
      *
@@ -34,12 +38,17 @@ export default class QueryParser {
         if (uniqueDatasets.length > 1)
             return null;
 
-        const filterTypesCorrect = this.verifyFilterDataTypes(uniqueDatasets, query.WHERE);
+        const dataset = uniqueDatasets[0];
 
-        if (!filterTypesCorrect)
-            return null;
+        if (!isUnknownDataset(dataset)) {
+            if (!this.verifyFilterDataTypes(dataset, query.WHERE))
+                return null;
 
-        return new ParsingResult(new Query(query.WHERE, query.OPTIONS), uniqueDatasets);
+            if (!this.verifyTransformations(dataset, query.TRANSFORMATIONS))
+                return null;
+        }
+
+        return new ParsingResult(new Query(query.WHERE, query.OPTIONS), dataset);
     }
 
     private static verifyToplevelQueryObject(query: any): boolean {
@@ -49,7 +58,10 @@ export default class QueryParser {
         if (query.OPTIONS === null || typeof query.OPTIONS !== 'object')
             return false;
 
-        return !(query.WHERE === null || typeof query.WHERE !== 'object')
+        if (query.WHERE === null || typeof query.WHERE !== 'object')
+            return false;
+
+        return (typeof query.TRANSFORMATIONS === 'undefined' || typeof query.TRANSFORMATIONS === 'object')
     }
 
     private static extractAllDatasets(query: any): string[] | null {
@@ -57,20 +69,84 @@ export default class QueryParser {
 
         const filterDatasets = this.extractFilterDatasets(query.WHERE);
 
-        if (optionsDatasets === null || filterDatasets === null)
+        const transformationsDatasets = this.extractTransformationsDatasets(query.TRANSFORMATIONS);
+
+        if (optionsDatasets === null || filterDatasets === null || transformationsDatasets === null)
             return null;
 
-        return [...optionsDatasets, ...filterDatasets]
+        return [...optionsDatasets, ...filterDatasets, ...transformationsDatasets]
     }
 
     private static removeDuplicates(datasets: string[]): string[] {
         return datasets.filter((value, index) => datasets.indexOf(value) === index)
     }
 
-    private static verifyFilterDataTypes(datasets: any[], filter: any) {
-        return datasets.reduce((acc, dataset) => {
-            return acc && isUnknownDataset(dataset) || this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
-        }, true);
+    private static verifyFilterDataTypes(dataset: string, filter: any): boolean {
+        return this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
+    }
+
+    private static verifyTransformations(dataset: string, transformations: any): boolean {
+        // two things to do here: all GROUP entries should be found in a dataset
+        // APPLY keys should either not have an underscore, or be found in a dataset
+        const groupCorrect = this.verifyGroup(transformations.GROUP, dataSetDefinitions[dataset].keys);
+
+        const applyCorrect = this.verifyApply(transformations.APPLY, dataSetDefinitions[dataset].keys);
+
+        return groupCorrect && applyCorrect;
+    }
+
+    private static verifyGroup(group: any, keySet: {[key: string]: string}): boolean {
+        if (!(group instanceof Array))
+            return false;
+
+        const keys = Object.keys(keySet);
+
+        return group
+                .map(maybeKey => typeof maybeKey === 'string' ? maybeKey : "")
+                .map(key => {
+                    const matches = key.match(keyRegex);
+
+                    return matches !== null ? matches[1] : null
+                })
+                .map(dataset => keys.indexOf(dataset))
+                .every(datasetIndex => datasetIndex !== -1)
+    }
+
+    private static verifyApply(apply: any, keys: {[key: string]: string}): boolean {
+        if (apply === null || typeof apply !== 'object')
+            return false;
+
+        const applyKeys = Object.keys(apply);
+
+        const applyValues = applyKeys.map(key => apply[key]);
+
+        const applyKeysCorrect = applyKeys.every(key => key.indexOf('_') !== -1);
+
+        const applyValuesCorrect = applyValues.every(value => this.verifyApplyValue(value, keys));
+
+        return applyKeysCorrect && applyValuesCorrect
+    }
+
+    private static verifyApplyValue(applyValue: any, keys: {[key: string]: string}): boolean {
+        // in here we have to check two categories. If the type of apply is MAX, MIN, AVG, or SUM,
+        // then we need to ensure that the key referred to is numeric. If the type is COUNT, check
+        // that the key is either number or string.
+
+        if (!isApplyFunction(applyValue))
+            return false;
+
+        if (isApplyCount(applyValue)) {
+            return keys[applyValue.COUNT] === 'string'
+                || keys[applyValue.COUNT] === 'number'
+        } else if (isApplyMax(applyValue)) {
+            return keys[applyValue.MAX] === 'number'
+        } else if (isApplyMin(applyValue)) {
+            return keys[applyValue.MIN] === 'number'
+        } else if (isApplyAvg(applyValue)) {
+            return keys[applyValue.AVG] === 'number'
+        } else {
+            return keys[applyValue.SUM] === 'number'
+        }
     }
 
     /**
@@ -147,6 +223,35 @@ export default class QueryParser {
             default:
                 return null;
         }
+    }
+
+    private static extractTransformationsDatasets(transformations: any): string[] | null {
+        if (transformations === null || transformations === undefined) {
+            return [];
+        }
+
+        if (!(transformations.GROUP instanceof Array))
+            return null;
+
+        if (transformations.GROUP.length < 1)
+            return null;
+
+        const groupDatasets: string[] = transformations.GROUP.map((group: any) => {
+            if (typeof group !== 'string')
+                return null;
+
+            const matches = group.match(keyRegex);
+
+            if (matches === null)
+                return null;
+
+            return matches[1];
+        });
+
+        if (groupDatasets.indexOf(null) !== -1)
+            return null;
+
+        return groupDatasets
     }
 
     /**

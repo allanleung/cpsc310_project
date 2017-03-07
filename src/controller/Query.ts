@@ -1,3 +1,4 @@
+import {App} from "../App";
 /**
  * Created by jerome on 2017-02-11.
  *
@@ -55,6 +56,12 @@ export interface ApplyCount {
 
 export interface ApplySum {
     SUM: string
+}
+
+export function isApplyFunction(item: any): item is ApplyFunction {
+    const apply = <ApplyFunction>item;
+
+    return isApplyMax(apply) || isApplyMin(apply) || isApplyAvg(apply) || isApplyCount(apply) || isApplySum(apply)
 }
 
 export function isApplyMax(apply: ApplyFunction): apply is ApplyMax {

@@ -35,7 +35,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ), ['courses']))
+        ), 'courses'))
     });
 
     it('should accept queries with room keys', () => {
@@ -65,7 +65,7 @@ describe('QueryParser.parseQuery', () => {
                 "ORDER": "rooms_name",
                 "FORM": "TABLE"
             }
-        ), ['rooms']));
+        ), 'rooms'));
     });
 
     it('should fail when given a query without an OPTIONS', () => {
@@ -126,7 +126,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "fake_instructor",
                 FORM: "TABLE"
             }
-        ), ['fake']));
+        ), 'fake'));
     });
 
     it('should fail when given an undefined query', () => {
@@ -168,7 +168,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "fake_avgs",
                 FORM: "TABLE"
             }
-        ), ['fake']))
+        ), 'fake'))
     });
 
     it('should fail with a key that is not the right type in the dataset', () => {
