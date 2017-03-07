@@ -15,151 +15,6 @@ import * as http from 'http';
 
 import {parseRoomsZip} from './Rooms';
 
-export function promisify(url: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-        http.get(url, response => {
-            if (response.statusCode === 200 && /^application\/json/.test(response.headers['content-type'])) {
-                response.setEncoding('utf8');
-                let rawData = '';
-
-                response.on('data', chunk => rawData += chunk);
-                response.on('error', e => reject(e));
-                response.on('end', () => {
-                    try {
-                        resolve(JSON.parse(rawData))
-                    } catch (e) {
-                        reject(e)
-                    }
-                });
-            } else {
-                const error = new Error(`Request failed: Status Code: ${response.statusCode}`);
-                response.resume();
-                reject(error)
-            }
-        }).on('error', e => reject(e))
-    })
-}
-
-export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attrs: any[]) : parse5.AST.Default.Element[] {
-    let elements: parse5.AST.Default.Element[] = [];
-
-    let elem: parse5.AST.Default.Element = node as parse5.AST.Default.Element;
-    if (elem.attrs !== undefined) {
-        let matches: boolean = attrs.every((attr) => {
-            return elem.attrs.some((elemAttr) => {
-                return attr.name === elemAttr.name && elemAttr.value.search(attr.value) != -1;
-            });
-        });
-
-        if (matches) {
-            return [elem];
-        }
-    }
-
-    if (node.childNodes !== undefined) {
-        for (let child of node.childNodes) {
-            let foundElements = getElementsByAttrs((<parse5.AST.Default.Element>child), attrs);
-
-            for (let found of foundElements) {
-                elements.push(found);
-            }
-        }
-    }
-
-    return elements;
-}
-
-export function isUnknownDataset (id: string) {
-    return !(id in dataSetDefinitions);
-}
-
-export const dataSetDefinitions: {
-    [dataSet: string]: {
-        processZip: (zip: JSZip) => Promise<any[]>,
-        keys: {
-            [key: string]: string
-        }
-    }
-} = {
-        rooms: {
-            // rooms_fullname: string; Full building name (e.g., "Hugh Dempster Pavilion").
-            // rooms_shortname: string; Short building name (e.g., "DMP").
-            // rooms_number: string; The room number. Not always a number, so represented as a string.
-            // rooms_name: string; The room id; should be rooms_shortname+"_"+rooms_number.
-            // rooms_address: string; The building address. (e.g., "6245 Agronomy Road V6T 1Z4").
-            // rooms_lat: number; The latitude of the building. Instructions for getting this field are below.
-            // rooms_lon: number; The longitude of the building. Instructions for getting this field are below.
-            // rooms_seats: number; The number of seats in the room.
-            // rooms_type: string; The room type (e.g., "Small Group").
-            // rooms_furniture: string; The room type (e.g., "Classroom-Movable Tables & Chairs").
-            // rooms_href: string; The link to full details online (e.g., "http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/DMP-201").
-            processZip: parseRoomsZip,
-            keys: {
-                rooms_fullname: 'string',
-                rooms_shortname: 'string',
-                rooms_name: 'string',
-                rooms_number: 'string',
-                rooms_address: 'string',
-                rooms_lat: 'number',
-                rooms_lon: 'number',
-                rooms_seats: 'number',
-                rooms_type: 'string',
-                rooms_furniture: 'string',
-                rooms_href: 'string'
-            }
-        },
-        courses: {
-            processZip: zip => {
-                const files: Promise<any[]>[] = [];
-
-                zip.forEach((path: string, file: JSZipObject) => {
-                    if (file.dir == true) {
-                        return;
-                    }
-
-                    files.push(file.async('string').then(data => {
-                        return JSON.parse(data).result.map((entry: any) => {
-                            return {
-                                courses_dept: entry.Subject,
-                                courses_id: entry.Course,
-                                courses_avg: entry.Avg,
-                                courses_instructor: entry.Professor,
-                                courses_title: entry.Title,
-                                courses_pass: entry.Pass,
-                                courses_fail: entry.Fail,
-                                courses_audit: entry.Audit,
-                                courses_uuid: entry.id,
-                                courses_year: entry.Section == "overall" ? 1900 : parseInt(entry.Year)
-                            };
-                        });
-                    }));
-                });
-
-                return Promise.all(files).then(data => {
-                    const allItems: any[] = [];
-
-                    for (let item of data) {
-                        allItems.push(...item);
-                    }
-
-                    return allItems;
-                });
-            },
-            keys: {
-                courses_dept: 'string',
-                courses_id: 'string',
-                courses_avg: 'number',
-                courses_instructor: 'string',
-                courses_title: 'string',
-                courses_pass: 'number',
-                courses_fail: 'number',
-                courses_audit: 'number',
-                courses_uuid: 'string',
-                courses_year: 'number'
-            }
-        }
-};
-
 export interface InsightResponse {
     code: number;
     body: any; // the actual response
@@ -238,4 +93,155 @@ export interface IInsightFacade {
      *
      */
     performQuery(query: any): Promise<InsightResponse>;
+}
+
+export const dataSetDefinitions: {
+    [dataSet: string]: {
+        processZip: (zip: JSZip) => Promise<any[]>,
+        keys: {
+            [key: string]: string
+        }
+    }
+} = {
+    rooms: {
+        // rooms_fullname: string; Full building name (e.g., "Hugh Dempster Pavilion").
+        // rooms_shortname: string; Short building name (e.g., "DMP").
+        // rooms_number: string; The room number. Not always a number, so represented as a string.
+        // rooms_name: string; The room id; should be rooms_shortname+"_"+rooms_number.
+        // rooms_address: string; The building address. (e.g., "6245 Agronomy Road V6T 1Z4").
+        // rooms_lat: number; The latitude of the building. Instructions for getting this field are below.
+        // rooms_lon: number; The longitude of the building. Instructions for getting this field are below.
+        // rooms_seats: number; The number of seats in the room.
+        // rooms_type: string; The room type (e.g., "Small Group").
+        // rooms_furniture: string; The room type (e.g., "Classroom-Movable Tables & Chairs").
+        // rooms_href: string; The link to full details online (e.g., "http://students.ubc.ca/campus/discover/buildings-and-classrooms/room/DMP-201").
+        processZip: parseRoomsZip,
+        keys: {
+            rooms_fullname: 'string',
+            rooms_shortname: 'string',
+            rooms_name: 'string',
+            rooms_number: 'string',
+            rooms_address: 'string',
+            rooms_lat: 'number',
+            rooms_lon: 'number',
+            rooms_seats: 'number',
+            rooms_type: 'string',
+            rooms_furniture: 'string',
+            rooms_href: 'string'
+        }
+    },
+    courses: {
+        processZip: parseCoursesZip,
+        keys: {
+            courses_dept: 'string',
+            courses_id: 'string',
+            courses_avg: 'number',
+            courses_instructor: 'string',
+            courses_title: 'string',
+            courses_pass: 'number',
+            courses_fail: 'number',
+            courses_audit: 'number',
+            courses_uuid: 'string',
+            courses_year: 'number'
+        }
+    }
+};
+
+export function requestPromise(url: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        http.get(url, response => {
+            if (response.statusCode === 200 && /^application\/json/.test(response.headers['content-type'])) {
+                response.setEncoding('utf8');
+                let rawData = '';
+
+                response.on('data', chunk => rawData += chunk);
+                response.on('error', e => reject(e));
+                response.on('end', () => {
+                    try {
+                        resolve(JSON.parse(rawData))
+                    } catch (e) {
+                        reject(e)
+                    }
+                });
+            } else {
+                const error = new Error(`Request failed: Status Code: ${response.statusCode}`);
+                response.resume();
+                reject(error)
+            }
+        }).on('error', e => reject(e))
+    })
+}
+
+export function getElementsByAttrs(node: parse5.AST.Default.ParentNode, attributes: any[]): parse5.AST.Default.Element[] {
+    const matchingElements: parse5.AST.Default.Element[] = [];
+
+    const element = node as parse5.AST.Default.Element;
+
+    if (element.attrs !== undefined) {
+        if (hasMatchingAttributes(element, attributes)) {
+            return [element]
+        }
+    }
+
+    if (node.childNodes !== undefined) {
+        for (let child of node.childNodes) {
+            const matchingChildElements = getElementsByAttrs((<parse5.AST.Default.Element>child), attributes);
+
+            matchingElements.push(...matchingChildElements);
+        }
+    }
+
+    return matchingElements;
+}
+
+export function isUnknownDataset (id: string): boolean {
+    return !(id in dataSetDefinitions);
+}
+
+export function flattenData(data: any[][]): any[] {
+    return data.reduce((allItems, item) => {
+        allItems.push(...item);
+        return allItems;
+    }, [])
+}
+
+function parseCoursesZip(zip: JSZip): Promise<any[]> {
+    const files: Promise<any[]>[] = [];
+
+    zip.forEach((path: string, file: JSZipObject) => {
+        if (file.dir == true) {
+            return;
+        }
+
+        files.push(file.async('string').then(data => {
+            return JSON.parse(data).result.map(createCoursesEntry);
+        }));
+    });
+
+    return Promise.all(files).then(flattenData);
+}
+
+function createCoursesEntry(entry: any): any {
+    return {
+        courses_dept: entry.Subject,
+        courses_id: entry.Course,
+        courses_avg: entry.Avg,
+        courses_instructor: entry.Professor,
+        courses_title: entry.Title,
+        courses_pass: entry.Pass,
+        courses_fail: entry.Fail,
+        courses_audit: entry.Audit,
+        courses_uuid: entry.id,
+        courses_year: entry.Section == "overall" ? 1900 : parseInt(entry.Year)
+    }
+}
+
+function hasMatchingAttributes(element: parse5.AST.Default.Element, attributes: any[]): boolean {
+    return attributes.every(attribute => {
+        return element.attrs.some(elementAttribute => isMatchingAttribute(attribute, elementAttribute));
+    });
+}
+
+function isMatchingAttribute(attribute: parse5.AST.Default.Attribute, elementAttribute: parse5.AST.Default.Attribute): boolean {
+    return attribute.name === elementAttribute.name && elementAttribute.value.search(attribute.value) != -1;
 }
