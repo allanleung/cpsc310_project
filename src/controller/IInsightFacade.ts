@@ -216,6 +216,17 @@ export function flattenData(data: any[][]): any[] {
     }, [])
 }
 
+export function filterObject(object: {[key: string]: any}, predicate: (key: string) => boolean): {[key: string]: any} {
+    const result: {[key: string]: any} = {};
+
+    for (let key of Object.keys(object)) {
+        if (predicate(key))
+            result[key] = object[key]
+    }
+
+    return result
+}
+
 function parseCoursesZip(zip: JSZip): Promise<any[]> {
     const files: Promise<any[]>[] = [];
 

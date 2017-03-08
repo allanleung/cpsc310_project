@@ -30,7 +30,6 @@ export class ParsingResult {
 }
 
 export default class QueryParser {
-    // TODO an empty WHERE should produce all rows, not error
     /**
      * Parses a query into a new Query object
      *
