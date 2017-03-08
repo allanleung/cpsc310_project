@@ -80,13 +80,11 @@ export default class InsightFacade implements IInsightFacade {
                 })
             }
 
-            const missing = this.queryController.findMissingDatasets(parsingResult.datasets);
-
-            if (missing.length > 0) {
+            if (this.queryController.isMissingDataset(parsingResult.dataset)) {
                 reject({
                     code: 424,
                     body: {
-                        missing
+                        missing: [parsingResult.dataset]
                     }
                 })
             }

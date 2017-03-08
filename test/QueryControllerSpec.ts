@@ -64,6 +64,75 @@ describe("QueryController.executeQuery", () => {
         queryController = null;
     });
 
+    it('should produce the whole dataset when given an empty WHERE clause', () => {
+        return expect(queryController.executeQuery(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER: "courses_id",
+                FORM: "TABLE"
+            }
+        ))).to.deep.eq([
+            {courses_id: "315"},
+            {courses_id: "325"},
+            {courses_id: "325"},
+            {courses_id: "385"}
+        ])
+    });
+
+    it('should correctly group together a simple query', () => {
+        return expect(queryController.executeQuery(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER: "courses_id",
+                FORM: "TABLE"
+            },
+            {
+                GROUP: [
+                    "courses_id"
+                ],
+                APPLY: []
+            }
+        ))).to.deep.eq([
+            {courses_id: "315"},
+            {courses_id: "325"},
+            {courses_id: "385"}
+        ])
+    });
+
+    it('should correctly apply a simple query', () => {
+        return expect(queryController.executeQuery(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_id",
+                    "totalPass"
+                ],
+                ORDER: "courses_id",
+                FORM: "TABLE"
+            },
+            {
+                GROUP: [
+                    "courses_id"
+                ],
+                APPLY: [{
+                    totalPass: {
+                        SUM: "courses_pass"
+                    }
+                }]
+            }
+        ))).to.deep.eq([
+            {courses_id: "315", totalPass: 71},
+            {courses_id: "325", totalPass: 142},
+            {courses_id: "385", totalPass: 71}
+        ])
+    });
+
     it('should produce the courses with averages between 85 and 98', () => {
         return expect(queryController.executeQuery(new Query(
             {

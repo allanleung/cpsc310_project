@@ -4,6 +4,102 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should fail if GROUPS is empty', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [],
+                APPLY: []
+            }
+        })).to.be.null
+    });
+
+    it('should fail if GROUPS is present and columns are not all in GROUPS or APPLY', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_shortname'
+                ],
+                APPLY: []
+            }
+        })).to.be.null
+    });
+
+    it('should permit a column that refers to the APPLY block', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_shortname',
+                    'maxSeats'
+                ],
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_shortname'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'rooms_shortname',
+                    'maxSeats'
+                ],
+                FORM: 'TABLE'
+            },
+            {
+                GROUP: [
+                    'rooms_shortname'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        ), 'rooms'))
+    });
+
+    it('should permit an empty WHERE clause', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                FORM: 'TABLE'
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                FORM: 'TABLE'
+            }
+        ), 'courses'))
+    });
+
     it('should produce a correct query when the query is valid', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
@@ -35,7 +131,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ), ['courses']))
+        ), 'courses'))
     });
 
     it('should accept queries with room keys', () => {
@@ -65,7 +161,7 @@ describe('QueryParser.parseQuery', () => {
                 "ORDER": "rooms_name",
                 "FORM": "TABLE"
             }
-        ), ['rooms']));
+        ), 'rooms'));
     });
 
     it('should fail when given a query without an OPTIONS', () => {
@@ -126,7 +222,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "fake_instructor",
                 FORM: "TABLE"
             }
-        ), ['fake']));
+        ), 'fake'));
     });
 
     it('should fail when given an undefined query', () => {
@@ -168,7 +264,7 @@ describe('QueryParser.parseQuery', () => {
                 ORDER: "fake_avgs",
                 FORM: "TABLE"
             }
-        ), ['fake']))
+        ), 'fake'))
     });
 
     it('should fail with a key that is not the right type in the dataset', () => {
@@ -620,21 +716,6 @@ describe('QueryParser.parseQuery', () => {
                         "courses_avg"
                     ],
                     ORDER: "courses_id",
-                    FORM: "TABLE",
-                }
-            }
-        )).to.be.null
-    });
-
-    it('should fail for an empty query', () => {
-        return expect(QueryParser.parseQuery({
-                WHERE: {},
-                OPTIONS: {
-                    COLUMNS: [
-                        "courses_dept",
-                        "courses_avg"
-                    ],
-                    ORDER: "courses_avg",
                     FORM: "TABLE",
                 }
             }

@@ -12,9 +12,10 @@ import Query, {
     GtFilter,
     LtFilter,
     AndFilter,
-    OrFilter
+    OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg
 } from "./Query";
 import DataController from "./DataController";
+import {isEmptyObject, filterObject} from "./IInsightFacade";
 /**
  * Created by jerome on 2017-02-10.
  *
@@ -27,22 +28,83 @@ export default class QueryController {
     public executeQuery(query: Query): any[] {
         const filteredItems = this.filterItems(query);
 
-        if (query.hasOrder()) {
-            QueryController.sortFilteredItems(filteredItems, query.OPTIONS.ORDER);
+        let finalItems = filteredItems;
+
+        if (query.hasTransformations()) {
+            finalItems = QueryController.groupFilteredItems(
+                filteredItems, query.TRANSFORMATIONS.GROUP, query.TRANSFORMATIONS.APPLY);
         }
 
-        return QueryController.renderItems(filteredItems, query.OPTIONS.COLUMNS);
+        if (query.hasOrder()) {
+            QueryController.sortFilteredItems(finalItems, query.OPTIONS.ORDER);
+        }
+
+        return QueryController.renderItems(finalItems, query.OPTIONS.COLUMNS);
     }
 
-    public findMissingDatasets(datasets: string[]): string[] {
-        return datasets.filter(item => !this.dataSet.hasDataset(item));
+    private static groupFilteredItems(items: any[], groups: string[], apply: Apply[]): any[] {
+        const categories: {
+            groupKey: any,
+            items: any[]
+        }[] = [];
+
+        for (let item of items) {
+            const key = filterObject(item, key => groups.indexOf(key) > -1);
+
+            const category = categories.find(category =>
+                groups.every(group => key[group] === category.groupKey[group]));
+
+            if (category === undefined) {
+                categories.push({
+                    groupKey: key,
+                    items: [item]
+                })
+            } else {
+                category.items.push(item)
+            }
+        }
+
+        return categories.map(({groupKey, items}) => {
+            return Object.assign(groupKey, QueryController.generateApplyKeys(apply, items))
+        });
+    }
+
+    private static generateApplyKeys(apply: Apply[], items: any[]): {[key: string]: number} {
+        const applyResult: {[key: string]: number} = {};
+
+        for (let applyItem of apply) {
+            const key = Object.keys(applyItem)[0];
+            const applyFunction = applyItem[key];
+
+            if (isApplyCount(applyFunction)) {
+                applyResult[key] = (new Set(items.map(item => item[applyFunction.COUNT])).size)
+            } else if (isApplyMax(applyFunction)) {
+                applyResult[key] = Math.max(...items.map(item => item[applyFunction.MAX]))
+            } else if (isApplyMin(applyFunction)) {
+                applyResult[key] = Math.min(...items.map(item => item[applyFunction.MIN]))
+            } else if (isApplySum(applyFunction)) {
+                applyResult[key] = items.map(item => item[applyFunction.SUM]).reduce((sum, item) => sum + item, 0)
+            } else if (isApplyAvg(applyFunction)) {
+                const modifiedSum = items.map(item => Number((item[applyFunction.AVG] * 10).toFixed(0)))
+                    .reduce((sum, item) => sum + item, 0);
+
+                applyResult[key] = Number(((modifiedSum / items.length) / 10).toFixed(2))
+            }
+        }
+        return applyResult;
+    }
+
+    public isMissingDataset(dataset: string): boolean {
+        return !this.dataSet.hasDataset(dataset);
     }
 
     private filterItems(query: Query): any[] {
         const filteredItems: any[] = [];
 
         this.dataSet.forEach(dataSet => {
-            filteredItems.push(...dataSet.filter(item => QueryController.shouldIncludeItem(query.WHERE, item)));
+            filteredItems.push(...dataSet.filter(item => {
+                return isEmptyObject(query.WHERE) || QueryController.shouldIncludeItem(query.WHERE, item)
+            }));
         });
 
         return filteredItems;

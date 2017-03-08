@@ -11,6 +11,97 @@ describe("RoomsSpec", () => {
         return insightFacade.addDataset('rooms', content);
     });
 
+    // TODO update this test once the new ORDER is implemented
+    it('should perform D3 example query A correctly', () => {
+        return insightFacade.performQuery({
+            "WHERE": {
+                "AND": [{
+                    "IS": {
+                        "rooms_furniture": "*Tables*"
+                    }
+                }, {
+                    "GT": {
+                        "rooms_seats": 300
+                    }
+                }]
+            },
+            "OPTIONS": {
+                "COLUMNS": [
+                    "rooms_shortname",
+                    "maxSeats"
+                ],
+                "ORDER": "maxSeats",
+                "FORM": "TABLE"
+            },
+            "TRANSFORMATIONS": {
+                "GROUP": ["rooms_shortname"],
+                "APPLY": [{
+                    "maxSeats": {
+                        "MAX": "rooms_seats"
+                    }
+                }]
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                "render": "TABLE",
+                "result": [{
+                    "rooms_shortname": "LSC",
+                    "maxSeats": 350
+                }, {
+                    "rooms_shortname": "HEBB",
+                    "maxSeats": 375
+                }, {
+                    "rooms_shortname": "OSBO",
+                    "maxSeats": 442
+                }]
+            }
+        }))
+    });
+
+    it('should perform D3 example query B correctly', () => {
+        return insightFacade.performQuery({
+            "WHERE": {},
+            "OPTIONS": {
+                "COLUMNS": [
+                    "rooms_furniture"
+                ],
+                "ORDER": "rooms_furniture",
+                "FORM": "TABLE"
+            },
+            "TRANSFORMATIONS": {
+                "GROUP": ["rooms_furniture"],
+                "APPLY": []
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {
+                "render": "TABLE",
+                "result": [{
+                    "rooms_furniture": "Classroom-Fixed Tables/Fixed Chairs"
+                }, {
+                    "rooms_furniture": "Classroom-Fixed Tables/Movable Chairs"
+                }, {
+                    "rooms_furniture": "Classroom-Fixed Tables/Moveable Chairs"
+                }, {
+                    "rooms_furniture": "Classroom-Fixed Tablets"
+                }, {
+                    "rooms_furniture": "Classroom-Hybrid Furniture"
+                }, {
+                    "rooms_furniture": "Classroom-Learn Lab"
+                }, {
+                    "rooms_furniture": "Classroom-Movable Tables & Chairs"
+                }, {
+                    "rooms_furniture": "Classroom-Movable Tablets"
+                }, {
+                    "rooms_furniture": "Classroom-Moveable Tables & Chairs"
+                }, {
+                    "rooms_furniture": "Classroom-Moveable Tablets"
+                }]
+            }
+        }))
+    });
+
     it('should perform example query A correctly', () => {
         return insightFacade.performQuery({
             "WHERE": {

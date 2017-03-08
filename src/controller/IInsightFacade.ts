@@ -198,11 +198,33 @@ export function isUnknownDataset (id: string): boolean {
     return !(id in dataSetDefinitions);
 }
 
+export function isObject(item: any): item is Object {
+    return item !== null && typeof item === 'object' && item.constructor === Object;
+}
+
+export function isEmptyObject(item: any): item is {} {
+    if (!isObject(item))
+        return false;
+
+    return Object.keys(item).length === 0
+}
+
 export function flattenData(data: any[][]): any[] {
     return data.reduce((allItems, item) => {
         allItems.push(...item);
         return allItems;
     }, [])
+}
+
+export function filterObject(object: {[key: string]: any}, predicate: (key: string) => boolean): {[key: string]: any} {
+    const result: {[key: string]: any} = {};
+
+    for (let key of Object.keys(object)) {
+        if (predicate(key))
+            result[key] = object[key]
+    }
+
+    return result
 }
 
 function parseCoursesZip(zip: JSZip): Promise<any[]> {
@@ -231,7 +253,7 @@ function createCoursesEntry(entry: any): any {
         courses_pass: entry.Pass,
         courses_fail: entry.Fail,
         courses_audit: entry.Audit,
-        courses_uuid: entry.id,
+        courses_uuid: "" + entry.id,
         courses_year: entry.Section == "overall" ? 1900 : parseInt(entry.Year)
     }
 }

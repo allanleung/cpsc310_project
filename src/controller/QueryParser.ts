@@ -3,74 +3,136 @@
  *
  * Contains the class for QueryRequest, which is responsible for parsing Queries.
  */
-import {dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
-import Query, {Filter, QueryOptions} from "./Query";
+import {dataSetDefinitions, keyRegex, isUnknownDataset, isEmptyObject} from "./IInsightFacade";
+import Query, {
+    Transformations,
+    isApplyCount,
+    isApplyMax,
+    isApplyMin,
+    isApplyAvg,
+    Filter,
+    isAndFilter,
+    isOrFilter,
+    isNotFilter,
+    isLtFilter,
+    isGtFilter,
+    isEqFilter,
+    isIsFilter,
+    Comparator,
+    Logic,
+    QueryOptions,
+    Apply,
+    ApplyFunction
+} from "./Query";
 
 export class ParsingResult {
-    constructor(readonly query: Query, readonly datasets: string[]) {}
+    constructor(readonly query: Query, readonly dataset: string) {}
 }
 
 export default class QueryParser {
-    readonly WHERE: Filter;
-    readonly OPTIONS: QueryOptions;
-
     /**
      * Parses a query into a new Query object
      *
-     * @param query the query to parse
+     * @param queryLike the query to parse
      * @returns {any} a new QueryParser, or a list of missing dataSets, or null if the query is invalid
      */
-    public static parseQuery(query: any): ParsingResult | null {
-        if (!this.verifyToplevelQueryObject(query))
+    public static parseQuery(queryLike: any): ParsingResult | null {
+        if (!Query.isQueryLike(queryLike))
             return null;
+
+        const query = new Query(queryLike.WHERE, queryLike.OPTIONS, queryLike.TRANSFORMATIONS);
 
         const datasets = this.extractAllDatasets(query);
-
-        if (datasets === null)
-            return null;
 
         const uniqueDatasets = this.removeDuplicates(datasets);
 
         if (uniqueDatasets.length > 1)
             return null;
 
-        const filterTypesCorrect = this.verifyFilterDataTypes(uniqueDatasets, query.WHERE);
+        const dataset = uniqueDatasets[0];
 
-        if (!filterTypesCorrect)
-            return null;
+        if (!isUnknownDataset(dataset)) {
+            if (!this.verifyFilterDataTypes(dataset, query.WHERE))
+                return null;
 
-        return new ParsingResult(new Query(query.WHERE, query.OPTIONS), uniqueDatasets);
+            if (query.hasTransformations() && !this.verifyTransformations(dataset, query.TRANSFORMATIONS))
+                return null;
+
+            const applyKeys = query.hasTransformations() ? this.extractApplyKeys(query.TRANSFORMATIONS) : [];
+
+            // NOTE we might need to do part of this step anyways, even if we don't know dataset
+            if (!this.verifyOptions(query.OPTIONS, applyKeys, dataSetDefinitions[dataset].keys))
+                return null;
+        }
+
+        return new ParsingResult(query, dataset);
     }
 
-    private static verifyToplevelQueryObject(query: any): boolean {
-        if (query === null || typeof query !== 'object')
-            return false;
-
-        if (query.OPTIONS === null || typeof query.OPTIONS !== 'object')
-            return false;
-
-        return !(query.WHERE === null || typeof query.WHERE !== 'object')
-    }
-
-    private static extractAllDatasets(query: any): string[] | null {
+    private static extractAllDatasets(query: Query): string[] {
         const optionsDatasets = this.extractOptionsDatasets(query.OPTIONS);
 
-        const filterDatasets = this.extractFilterDatasets(query.WHERE);
+        const filterDatasets = isEmptyObject(query.WHERE) ? [] : this.extractFilterDatasets(query.WHERE);
 
-        if (optionsDatasets === null || filterDatasets === null)
-            return null;
+        const transformationsDatasets = query.hasTransformations() ?
+            this.extractTransformationsDatasets(query.TRANSFORMATIONS) : [];
 
-        return [...optionsDatasets, ...filterDatasets]
+        return [...optionsDatasets, ...filterDatasets, ...transformationsDatasets]
     }
 
     private static removeDuplicates(datasets: string[]): string[] {
         return datasets.filter((value, index) => datasets.indexOf(value) === index)
     }
 
-    private static verifyFilterDataTypes(datasets: any[], filter: any) {
-        return datasets.reduce((acc, dataset) => {
-            return acc && isUnknownDataset(dataset) || this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
-        }, true);
+    private static verifyFilterDataTypes(dataset: string, filter: Filter | {}): boolean {
+        return isEmptyObject(filter) || this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
+    }
+
+    private static verifyTransformations(dataset: string, transformations: Transformations): boolean {
+        // two things to do here: all GROUP entries should be found in a dataset
+        // APPLY entries should reference datasets that exist
+        const groupCorrect = this.verifyGroup(transformations.GROUP, dataSetDefinitions[dataset].keys);
+
+        const applyCorrect = this.verifyApply(transformations.APPLY, dataSetDefinitions[dataset].keys);
+
+        return groupCorrect && applyCorrect;
+    }
+
+    private static extractApplyKeys(transformations: Transformations): string[] {
+        return transformations.APPLY.map(entry => Object.keys(entry)[0])
+    }
+
+    private static verifyOptions(options: QueryOptions, applyKeys: string[], keySet: {[key: string]: string}): boolean {
+        // verify that all COLUMNS are either in the keyset or in the apply keys
+        const datasetKeys = Object.keys(keySet);
+
+        return options.COLUMNS.every(key => datasetKeys.indexOf(key) > -1 || applyKeys.indexOf(key) > -1)
+    }
+
+    private static verifyGroup(group: string[], keySet: {[key: string]: string}): boolean {
+        const keys = Object.keys(keySet);
+
+        return group.every(key => keys.indexOf(key) !== -1)
+    }
+
+    private static verifyApply(apply: Apply[], keys: {[key: string]: string}): boolean {
+        return apply
+            .map(entry => entry[Object.keys(entry)[0]])
+            .every(value => this.verifyApplyValue(value, keys));
+    }
+
+    private static verifyApplyValue(applyValue: ApplyFunction, keys: {[key: string]: string}): boolean {
+        if (isApplyCount(applyValue)) {
+            return keys[applyValue.COUNT] === 'string'
+                || keys[applyValue.COUNT] === 'number'
+        } else if (isApplyMax(applyValue)) {
+            return keys[applyValue.MAX] === 'number'
+        } else if (isApplyMin(applyValue)) {
+            return keys[applyValue.MIN] === 'number'
+        } else if (isApplyAvg(applyValue)) {
+            return keys[applyValue.AVG] === 'number'
+        } else {
+            return keys[applyValue.SUM] === 'number'
+        }
     }
 
     /**
@@ -79,39 +141,17 @@ export default class QueryParser {
      * @param options the options object to parse
      * @returns {null} the dataSets it references, or null if the options clause is invalid
      */
-    private static extractOptionsDatasets(options: any): string[] | null {
-        if (!(options.COLUMNS instanceof Array))
-            return null;
+    private static extractOptionsDatasets(options: QueryOptions): string[] {
+        return options.COLUMNS.map(key => {
+            const matches = key.match(keyRegex);
 
-        if (options.COLUMNS.length < 1)
-            return null;
-
-        if (options.FORM !== 'TABLE')
-            return null;
-
-        if (options.ORDER !== undefined && options.ORDER !== null) {
-            if (typeof options.ORDER !== 'string')
+            if (matches === null) {
+                // column references an APPLY key
                 return null;
-
-            const orderMatches = options.ORDER.match(keyRegex);
-
-            if (orderMatches === null)
-                return null;
-
-            if (options.COLUMNS.indexOf(options.ORDER) === -1)
-                return null;
-        }
-
-        return options.COLUMNS.reduce((acc: string[], item: string) => {
-            const matches = item.match(keyRegex);
-
-            if (matches === null || acc === null)
-                return null;
-
-            acc.push(matches[1]);
-
-            return acc;
-        }, []);
+            } else {
+                return key.match(keyRegex)[1]
+            }
+        }).filter(dataset => dataset !== null)
     }
 
     /**
@@ -120,33 +160,36 @@ export default class QueryParser {
      * @param filter the query to try to parse
      * @returns {null} the dataSets referenced in the query, or null if the query is invalid
      */
-    private static extractFilterDatasets(filter: any): string[] | null {
-        if (typeof filter !== "object")
-            return null; // malformed
+    private static extractFilterDatasets(filter: Filter): string[] {
+        if (isAndFilter(filter))
+            return this.extractLogicFilterDatasets(filter.AND);
+        else if (isOrFilter(filter))
+            return this.extractLogicFilterDatasets(filter.OR);
+        else if (isNotFilter(filter))
+            return this.extractFilterDatasets(filter.NOT);
+        else if (isLtFilter(filter))
+            return this.extractComparisonFilterDatasets(filter.LT);
+        else if (isGtFilter(filter))
+            return this.extractComparisonFilterDatasets(filter.GT);
+        else if (isEqFilter(filter))
+            return this.extractComparisonFilterDatasets(filter.EQ);
+        else if (isIsFilter(filter))
+            return this.extractIsFilterDatasets(filter.IS);
+    }
 
-        if (filter === null)
-            return null; // malformed
+    private static extractIsFilterDatasets(entry: {[key: string]: string}): string[] {
+        return Object.keys(entry).map(key => key.match(keyRegex)[1])
+    }
 
-        if (Object.keys(filter).length !== 1)
-            return null; // malformed
+    private static extractTransformationsDatasets(transformations: Transformations): string[] {
+        const groupDatasets = transformations.GROUP.map(key => key.match(keyRegex)[1]);
 
-        const filterType = Object.keys(filter)[0];
-        const filterValue = filter[filterType];
+        const applyDatasets = transformations.APPLY
+            .map(item => (<any>item)[Object.keys(item)[0]])
+            .map(applyFunction => (<any>applyFunction)[Object.keys(applyFunction)[0]])
+            .map(key => key.match(keyRegex)[1]);
 
-        switch (filterType) {
-            case "OR":
-            case "AND":
-                return this.extractLogicFilterDatasets(filterValue);
-            case "NOT":
-                return this.extractFilterDatasets(filterValue);
-            case "LT":
-            case "GT":
-            case "EQ":
-            case "IS":
-                return this.extractComparisonFilterDatasets(filterType, filterValue);
-            default:
-                return null;
-        }
+        return [...groupDatasets, ...applyDatasets]
     }
 
     /**
@@ -175,61 +218,17 @@ export default class QueryParser {
                 const key = Object.keys(filter[filterType])[0];
                 const value = filter[filterType][key];
 
-                const keyDataSet = key.match(keyRegex)[1];
-
-                // ignore any keys that not part of the dataSet we're testing
-                return dataSet !== keyDataSet || typeof value === keyTypes[key];
+                return typeof value === keyTypes[key];
         }
     }
 
-    private static extractLogicFilterDatasets(filterValue: any): string[]|any {
-        if (!(filterValue instanceof Array))
-            return null; // malformed
-
-        if (filterValue.length === 0)
-            return null; // malformed
-
-        return filterValue.reduce((acc: string[], innerFilter: any) => {
-            const innerResult = this.extractFilterDatasets(innerFilter);
-
-            if (innerResult === null)
-                return null;
-
-            acc.push(...innerResult);
-
-            return acc;
+    private static extractLogicFilterDatasets(filters: Logic): string[] {
+        return filters.reduce((acc, filter) => {
+            return [...acc, ...this.extractFilterDatasets(filter)];
         }, []);
     }
 
-    private static extractComparisonFilterDatasets(filterType: string, filterValue: any): string[] | null {
-        if (typeof filterValue !== "object")
-            return null;
-
-        if (filterValue === null)
-            return null;
-
-        if (Object.keys(filterValue).length !== 1)
-            return null;
-
-        const key = Object.keys(filterValue)[0];
-
-        const matches = key.match(keyRegex);
-
-        if (matches === null)
-            return null;
-
-        if (filterType === 'IS') {
-            if (typeof filterValue[key] !== 'string') {
-                return null;
-            } else {
-                return [matches[1]];
-            }
-        } else { // EQ, GT, LT
-            if (typeof filterValue[key] !== 'number') {
-                return null;
-            } else {
-                return [matches[1]];
-            }
-        }
+    private static extractComparisonFilterDatasets(comparator: Comparator): string[] {
+        return Object.keys(comparator).map(key => key.match(keyRegex)[1])
     }
 }
