@@ -253,7 +253,7 @@ function createCoursesEntry(entry: any): any {
         courses_pass: entry.Pass,
         courses_fail: entry.Fail,
         courses_audit: entry.Audit,
-        courses_uuid: entry.id,
+        courses_uuid: "" + entry.id,
         courses_year: entry.Section == "overall" ? 1900 : parseInt(entry.Year)
     }
 }

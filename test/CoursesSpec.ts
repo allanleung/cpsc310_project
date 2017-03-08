@@ -4,11 +4,27 @@ import * as fs from 'fs';
 
 describe("CoursesSpec", () => {
     let insightFacade = new InsightFacade(false);
+    const allCourses = JSON.parse(fs.readFileSync('test/allcourses.json').toString('utf8'));
 
     before(function() {
         this.timeout(10000);
         const content = fs.readFileSync('test/courses.zip').toString('base64');
         return insightFacade.addDataset('courses', content);
+    });
+
+    it('should return the correct result for all courses', function () {
+        this.timeout(50000000);
+
+        return insightFacade.performQuery({
+            "WHERE": {}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id", "courses_avg", "courses_instructor", "courses_title", "courses_pass", "courses_fail", "courses_audit", "courses_uuid", "courses_year"], "ORDER": "courses_id", "FORM": "TABLE"}
+        }).then(response => {
+            expect(response.code).to.eq(200);
+            expect(response.body.result.length).to.eq(allCourses.result.length);
+
+            for (let idx = 0; idx < response.body.result.length; idx++) {
+                expect(response.body.result[idx]).to.deep.eq(allCourses.result[idx]);
+            }
+        })
     });
 
     it('should return the correct result for a complex query', () => {
@@ -5093,31 +5109,31 @@ describe("CoursesSpec", () => {
 
     it('should be able to find all courses in a department with a partial name', () => {
         return insightFacade.performQuery({
-            WHERE: {
-                AND: [
+            "WHERE": {
+                "AND": [
                     {
-                        IS: {
-                            courses_title: "*cmpt*"
+                        "IS": {
+                            "courses_title": "*cmpt*"
                         }
                     },
                     {
-                        IS: {
-                            courses_dept: "cpsc"
+                        "IS": {
+                            "courses_dept": "cpsc"
                         }
                     }
                 ]
             },
-            OPTIONS: {
-                COLUMNS: [
+            "OPTIONS": {
+                "COLUMNS": [
                     "courses_title",
                     "courses_uuid",
                     "courses_id"
                 ],
-                FORM: 'TABLE'
+                "FORM": "TABLE"
             }
         }).then(response => expect(response).to.deep.eq({
             code: 200,
-            body: {"render":"TABLE","result":[{"courses_title":"hmn-cmpt intract","courses_uuid":1378,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":1379,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":46805,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":46806,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":50001,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":50002,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":52117,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":52118,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":61241,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":61242,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":62478,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":62479,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":72469,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":72470,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":83537,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":83538,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":90648,"courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":90649,"courses_id":"544"}]}
+            body: {"render":"TABLE","result":[{"courses_title":"hmn-cmpt intract","courses_uuid":"1378","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"1379","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"46805","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"46806","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"50001","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"50002","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"52117","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"52118","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"61241","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"61242","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"62478","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"62479","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"72469","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"72470","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"83537","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"83538","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"90648","courses_id":"544"},{"courses_title":"hmn-cmpt intract","courses_uuid":"90649","courses_id":"544"}]}
         }));
     });
 

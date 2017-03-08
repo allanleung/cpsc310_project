@@ -8,7 +8,6 @@ import {expect} from "chai";
 import Log from "../src/Util";
 import * as chai from 'chai';
 import chaiHttp = require('chai-http');
-import * as fs from 'fs';
 import Response = ChaiHttp.Response;
 
 chai.use(chaiHttp);
@@ -28,7 +27,45 @@ describe("ServerSpec", function () {
     it('should successfully perform a request', () => {
         return chai.request("http://localhost:8000")
             .put('/dataset/rooms')
-            .attach("body", fs.readFileSync("./test/rooms.zip"), "rooms.zip")
+            .then(res => {
+                Log.trace('then: ' + res);
+                // some assertions
+            }, err => {
+                Log.trace('catch: ' + err);
+                // some assertions
+                expect.fail();
+            });
+    });
+
+    it('should successfully perform a request', () => {
+        return chai.request("http://localhost:8000")
+            .del('/dataset/rooms')
+            .then(res => {
+                Log.trace('then: ' + res);
+                // some assertions
+            }, err => {
+                Log.trace('catch: ' + err);
+                // some assertions
+                expect.fail();
+            });
+    });
+
+    it('should successfully perform a request', () => {
+        return chai.request("http://localhost:8000")
+            .post('/query')
+            .then(res => {
+                Log.trace('then: ' + res);
+                // some assertions
+            }, err => {
+                Log.trace('catch: ' + err);
+                // some assertions
+                expect.fail();
+            });
+    });
+
+    it('should successfully perform a request', () => {
+        return chai.request("http://localhost:8000")
+            .get('/')
             .then(res => {
                 Log.trace('then: ' + res);
                 // some assertions
