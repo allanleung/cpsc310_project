@@ -3,7 +3,6 @@
   "description": "CPSC 310 project",
   "homepage": "https://github.com/ubccpsc/310",
   "author": "",
-  "contributors": "N/A",
   "license": "GPL-3.0",
   "repository": "N/A",
   "bugs": "",
@@ -11,6 +10,7 @@
   "version": "0.0.1",
   "devDependencies": {
     "bunyan": "^1.8.5",
+    "chai-http": "^3.0.0",
     "icedfrisby": "^0.3.X",
     "joi": "^10.0.X",
     "mocha": "^3.2.0",
@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@types/chai": "^3.4.34",
+    "@types/chai-http": "^0.0.30",
     "@types/core-js": "^0.9.35",
     "@types/jszip": "0.0.31",
     "@types/mocha": "^2.2.33",
