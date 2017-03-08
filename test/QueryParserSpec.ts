@@ -4,6 +4,68 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should permit a column that refers to the APPLY block', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_shortname',
+                    'maxSeats'
+                ],
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_shortname'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'rooms_shortname',
+                    'maxSeats'
+                ],
+                FORM: 'TABLE'
+            },
+            {
+                GROUP: [
+                    'rooms_shortname'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        ), 'rooms'))
+    });
+
+    it('should permit an empty WHERE clause', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                FORM: 'TABLE'
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                FORM: 'TABLE'
+            }
+        ), 'courses'))
+    });
+
     it('should produce a correct query when the query is valid', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
@@ -620,21 +682,6 @@ describe('QueryParser.parseQuery', () => {
                         "courses_avg"
                     ],
                     ORDER: "courses_id",
-                    FORM: "TABLE",
-                }
-            }
-        )).to.be.null
-    });
-
-    it('should fail for an empty query', () => {
-        return expect(QueryParser.parseQuery({
-                WHERE: {},
-                OPTIONS: {
-                    COLUMNS: [
-                        "courses_dept",
-                        "courses_avg"
-                    ],
-                    ORDER: "courses_avg",
                     FORM: "TABLE",
                 }
             }

@@ -1,4 +1,4 @@
-import {keyRegex} from "./IInsightFacade";
+import {keyRegex, isEmptyObject, isObject} from "./IInsightFacade";
 /**
  * Created by jerome on 2017-02-11.
  *
@@ -7,13 +7,13 @@ import {keyRegex} from "./IInsightFacade";
  */
 export default class Query {
     constructor(
-        public readonly WHERE: Filter,
+        public readonly WHERE: Filter | {},
         public readonly OPTIONS: QueryOptions,
         public readonly TRANSFORMATIONS?: Transformations
     ) {}
 
     public static isQueryLike(item: any): boolean {
-        if (item === null || typeof item !== 'object')
+        if (!isObject(item))
             return false;
 
         const keys = Object.keys(item);
@@ -28,7 +28,7 @@ export default class Query {
         if (!isQueryOptions(item.OPTIONS))
             return false;
 
-        return isFilter(item.WHERE)
+        return isFilter(item.WHERE) || isEmptyObject(item.WHERE)
     }
 
     public hasOrder(): boolean {
@@ -47,7 +47,7 @@ export interface QueryOptions {
 }
 
 export function isQueryOptions(item: any): item is QueryOptions {
-    if (item === null || typeof item !== 'object')
+    if (!isObject(item))
         return false;
 
     const keys = Object.keys(item);
@@ -67,7 +67,7 @@ export function isQueryOptions(item: any): item is QueryOptions {
     if (keys.indexOf('FORM') === -1)
         return false;
 
-    if (!(item.COLUMNS instanceof Array))
+    if (!Array.isArray(item.COLUMNS))
         return false;
 
     if (item.COLUMNS.some((entry: any) => typeof entry !== 'string'))
@@ -81,7 +81,7 @@ export function isQueryOptions(item: any): item is QueryOptions {
             return false;
     }
 
-    return typeof item.FORM === 'string';
+    return item.FORM === 'TABLE';
 }
 
 export interface Transformations {
@@ -90,25 +90,29 @@ export interface Transformations {
 }
 
 export function isTransformations(item: any): item is Transformations {
-    if (item === null || typeof item !== 'object')
+    if (!isObject(item))
         return false;
 
     if (Object.keys(item).length !== 2)
         return false;
 
-    if (!(item.GROUP instanceof Array))
+    if (!Array.isArray(item.GROUP))
         return false;
 
-    if (!(item.APPLY instanceof Array))
+    if (!Array.isArray(item.APPLY))
+        return false;
+
+    // TODO write a test for this
+    if (item.GROUP.length < 1)
         return false;
 
     if (item.GROUP.some((key: any) => typeof key !== 'string'))
         return false;
 
-    if (item.GROUP.some((key: any) => key.matches(keyRegex) === null))
+    if (item.GROUP.some((key: any) => key.match(keyRegex) === null))
         return false;
 
-    return !item.APPLY.some((value: any) => !isApply(value));
+    return item.APPLY.every((value: any) => isApply(value));
 }
 
 export interface Apply {
@@ -116,10 +120,10 @@ export interface Apply {
 }
 
 export function isApply(item: any): item is Apply {
-    if (item === null || typeof item !== 'object')
+    if (!isObject(item))
         return false;
 
-    if (Object.keys(item).length < 1)
+    if (isEmptyObject(item))
         return false;
 
     const applyKeys = Object.keys(item);
@@ -155,7 +159,7 @@ export interface ApplySum {
 export function isApplyFunction(item: any): item is ApplyFunction {
     const apply = <ApplyFunction>item;
 
-    if (typeof item !== 'object' || item === null)
+    if (!isObject(item))
         return false;
 
     if (Object.keys(item).length !== 1)
@@ -194,8 +198,8 @@ export function isApplySum(apply: ApplyFunction): apply is ApplySum {
 export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
 
 export function isFilter(item: any): item is Filter {
-    if (item === null || typeof item !== 'object')
-        return null;
+    if (!isObject(item))
+        return false;
 
     if (Object.keys(item).length !== 1)
         return false;
@@ -207,7 +211,7 @@ export function isFilter(item: any): item is Filter {
 export type Comparator = {[key: string]: number};
 
 export function isComparator(item: any): item is Comparator {
-    if (item === null || typeof item !== 'object')
+    if (!isObject(item))
         return false;
 
     if (Object.keys(item).length !== 1)
@@ -224,7 +228,7 @@ export function isComparator(item: any): item is Comparator {
 export type Logic = Filter[];
 
 export function isLogic(item: any): item is Logic {
-    if (!(item instanceof Array))
+    if (!Array.isArray(item))
         return false;
 
     if (item.length < 1)
@@ -262,7 +266,7 @@ export interface NotFilter {
 }
 
 function couldBeFilter(item: any): boolean {
-    if (item === null || typeof item !== 'object')
+    if (!isObject(item))
         return false;
 
     return Object.keys(item).length === 1
@@ -272,7 +276,7 @@ export function isIsFilter(item: any): item is IsFilter {
     if (!couldBeFilter(item))
         return false;
 
-    if (item.IS === null || typeof item.IS !== 'object')
+    if (!isObject(item.IS))
         return false;
 
     if (Object.keys(item.IS).length !== 1)

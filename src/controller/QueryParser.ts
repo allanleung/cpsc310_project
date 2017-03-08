@@ -3,7 +3,7 @@
  *
  * Contains the class for QueryRequest, which is responsible for parsing Queries.
  */
-import {dataSetDefinitions, keyRegex, isUnknownDataset} from "./IInsightFacade";
+import {dataSetDefinitions, keyRegex, isUnknownDataset, isEmptyObject} from "./IInsightFacade";
 import Query, {
     Transformations,
     isApplyCount,
@@ -72,7 +72,7 @@ export default class QueryParser {
     private static extractAllDatasets(query: Query): string[] {
         const optionsDatasets = this.extractOptionsDatasets(query.OPTIONS);
 
-        const filterDatasets = this.extractFilterDatasets(query.WHERE);
+        const filterDatasets = isEmptyObject(query.WHERE) ? [] : this.extractFilterDatasets(query.WHERE);
 
         const transformationsDatasets = query.hasTransformations() ?
             this.extractTransformationsDatasets(query.TRANSFORMATIONS) : [];
@@ -84,8 +84,8 @@ export default class QueryParser {
         return datasets.filter((value, index) => datasets.indexOf(value) === index)
     }
 
-    private static verifyFilterDataTypes(dataset: string, filter: Filter): boolean {
-        return this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
+    private static verifyFilterDataTypes(dataset: string, filter: Filter | {}): boolean {
+        return isEmptyObject(filter) || this.verifyFilterTypes(filter, dataset, dataSetDefinitions[dataset].keys)
     }
 
     private static verifyTransformations(dataset: string, transformations: Transformations): boolean {
@@ -112,10 +112,7 @@ export default class QueryParser {
     private static verifyGroup(group: string[], keySet: {[key: string]: string}): boolean {
         const keys = Object.keys(keySet);
 
-        return group
-                .map(key => key.match(keyRegex)[1])
-                .map(dataset => keys.indexOf(dataset))
-                .every(datasetIndex => datasetIndex !== -1)
+        return group.every(key => keys.indexOf(key) !== -1)
     }
 
     private static verifyApply(apply: Apply[], keys: {[key: string]: string}): boolean {
@@ -146,7 +143,16 @@ export default class QueryParser {
      * @returns {null} the dataSets it references, or null if the options clause is invalid
      */
     private static extractOptionsDatasets(options: QueryOptions): string[] {
-        return options.COLUMNS.map(key => key.match(keyRegex)[1])
+        return options.COLUMNS.map(key => {
+            const matches = key.match(keyRegex);
+
+            if (matches === null) {
+                // column references an APPLY key
+                return null;
+            } else {
+                return key.match(keyRegex)[1]
+            }
+        }).filter(dataset => dataset !== null)
     }
 
     /**

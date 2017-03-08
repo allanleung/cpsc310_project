@@ -198,6 +198,17 @@ export function isUnknownDataset (id: string): boolean {
     return !(id in dataSetDefinitions);
 }
 
+export function isObject(item: any): item is Object {
+    return item !== null && typeof item === 'object' && item.constructor === Object;
+}
+
+export function isEmptyObject(item: any): item is {} {
+    if (!isObject(item))
+        return false;
+
+    return Object.keys(item).length === 0
+}
+
 export function flattenData(data: any[][]): any[] {
     return data.reduce((allItems, item) => {
         allItems.push(...item);

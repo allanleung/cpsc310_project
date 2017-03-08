@@ -15,6 +15,7 @@ import Query, {
     OrFilter
 } from "./Query";
 import DataController from "./DataController";
+import {isEmptyObject} from "./IInsightFacade";
 /**
  * Created by jerome on 2017-02-10.
  *
@@ -42,7 +43,9 @@ export default class QueryController {
         const filteredItems: any[] = [];
 
         this.dataSet.forEach(dataSet => {
-            filteredItems.push(...dataSet.filter(item => QueryController.shouldIncludeItem(query.WHERE, item)));
+            filteredItems.push(...dataSet.filter(item => {
+                return isEmptyObject(query.WHERE) || QueryController.shouldIncludeItem(query.WHERE, item)
+            }));
         });
 
         return filteredItems;
