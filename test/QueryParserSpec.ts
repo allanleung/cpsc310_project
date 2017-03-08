@@ -4,6 +4,22 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should fail if GROUPS is empty', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [],
+                APPLY: []
+            }
+        })).to.be.null
+    });
+
     it('should fail if GROUPS is present and columns are not all in GROUPS or APPLY', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
@@ -19,7 +35,7 @@ describe('QueryParser.parseQuery', () => {
                 ],
                 APPLY: []
             }
-        })).to.be.null;
+        })).to.be.null
     });
 
     it('should permit a column that refers to the APPLY block', () => {

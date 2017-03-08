@@ -102,7 +102,6 @@ export function isTransformations(item: any): item is Transformations {
     if (!Array.isArray(item.APPLY))
         return false;
 
-    // TODO write a test for this
     if (item.GROUP.length < 1)
         return false;
 
