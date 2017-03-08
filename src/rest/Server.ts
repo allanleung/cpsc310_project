@@ -72,7 +72,7 @@ export default class Server {
                 return next();
             });
 
-            this.rest.listen(this.port, 'localhost', () => {
+            this.rest.listen(this.port, () => {
                 Log.info('Server::start() - restify listening: ' + this.rest.url);
                 fulfill(true);
             });
