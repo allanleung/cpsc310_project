@@ -52,8 +52,8 @@ export enum SortOrder {
 }
 
 export interface Order {
-    DIR: SortOrder;
-    KEYS: string[];
+    dir: SortOrder;
+    keys: string[];
 }
 
 export function isQueryOptions(item: any): item is QueryOptions {
@@ -91,7 +91,7 @@ export function isQueryOptions(item: any): item is QueryOptions {
             if (item.COLUMNS.indexOf(item.ORDER) < 0)
                 return false;
         } else {
-            for (let key of (<Order>item.ORDER).KEYS) {
+            for (let key of (<Order>item.ORDER).keys) {
                 if (item.COLUMNS.indexOf(key) < 0)
                     return false;
             }

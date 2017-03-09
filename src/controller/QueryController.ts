@@ -127,14 +127,14 @@ export default class QueryController {
             });
         } else {
             filteredItems.sort((item1, item2) => {
-                for (let key of order.KEYS) {
+                for (let key of order.keys) {
                     let value1 = item1[key];
                     let value2 = item2[key];
 
                     if (value1 < value2) {
-                        return order.DIR === SortOrder.UP ? -1 : 1;
+                        return order.dir === SortOrder.UP ? -1 : 1;
                     } else if (value1 > value2) {
-                        return order.DIR === SortOrder.UP ? 1 : -1;
+                        return order.dir === SortOrder.UP ? 1 : -1;
                     }
                 }
 

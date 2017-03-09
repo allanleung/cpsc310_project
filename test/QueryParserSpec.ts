@@ -1,9 +1,25 @@
 import {expect} from 'chai';
 import QueryParser from "../src/controller/QueryParser";
-import Query, {Order, SortOrder} from "../src/controller/Query";
+import Query, {SortOrder} from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should allow a D3 style order', ()=> {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: "DOWN",
+
+                }
+            }
+        }))
+    });
+
     it('should fail if GROUPS is empty', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
@@ -166,8 +182,8 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER: {
-                    DIR: SortOrder.UP,
-                    KEYS: ["courses_id", "courses_avg"]
+                    dir: SortOrder.UP,
+                    keys: ["courses_id", "courses_avg"]
                 },
                 FORM: "TABLE",
             }

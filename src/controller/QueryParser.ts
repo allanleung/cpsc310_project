@@ -44,9 +44,9 @@ export default class QueryParser {
         }
 
         if (!isNullOrUndefined(queryLike.OPTIONS.ORDER) && (typeof queryLike.OPTIONS.ORDER) !== "string") {
-            queryLike.OPTIONS.ORDER.DIR = (<any>SortOrder)[queryLike.OPTIONS.ORDER.DIR.toUpperCase()];
+            queryLike.OPTIONS.ORDER.dir = (<any>SortOrder)[queryLike.OPTIONS.ORDER.dir.toUpperCase()];
 
-            if (isNullOrUndefined(queryLike.OPTIONS.ORDER.DIR)) {
+            if (isNullOrUndefined(queryLike.OPTIONS.ORDER.dir)) {
                 return null;
             }
         }
