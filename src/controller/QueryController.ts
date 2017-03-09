@@ -13,7 +13,7 @@ import Query, {
     LtFilter,
     AndFilter,
     OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg,
-    Order, SortOrder
+    Order
 } from "./Query";
 import DataController from "./DataController";
 import {isEmptyObject, filterObject} from "./IInsightFacade";
@@ -112,35 +112,26 @@ export default class QueryController {
     }
 
     private static sortFilteredItems(filteredItems: any[], order: Order | string) {
-        if (typeof order === "string") {
-            filteredItems.sort((item1, item2) => {
-                let value1 = item1[order];
-                let value2 = item2[order];
+        const sortKeys = typeof order === 'string' ? [order] : order.keys;
+        const direction = typeof order === 'string' ? 'UP' : order.dir;
+
+        const before = direction === 'UP' ? -1 : 1;
+        const after = -before;
+
+        filteredItems.sort((item1, item2) => {
+            for (let key of sortKeys) {
+                let value1 = item1[key];
+                let value2 = item2[key];
 
                 if (value1 < value2) {
-                    return -1;
+                    return before;
                 } else if (value1 > value2) {
-                    return 1;
-                } else {
-                    return 0;
+                    return after;
                 }
-            });
-        } else {
-            filteredItems.sort((item1, item2) => {
-                for (let key of order.keys) {
-                    let value1 = item1[key];
-                    let value2 = item2[key];
+            }
 
-                    if (value1 < value2) {
-                        return order.dir === SortOrder.UP ? -1 : 1;
-                    } else if (value1 > value2) {
-                        return order.dir === SortOrder.UP ? 1 : -1;
-                    }
-                }
-
-                return 0;
-            });
-        }
+            return 0;
+        });
     }
 
     private static renderItems(filteredItems: any[], columns: string[]): any[] {

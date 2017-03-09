@@ -21,11 +21,9 @@ import Query, {
     Comparator,
     Logic,
     QueryOptions,
-    SortOrder,
     Apply,
     ApplyFunction
 } from "./Query";
-import {isNullOrUndefined} from "util";
 
 export class ParsingResult {
     constructor(readonly query: Query, readonly dataset: string) {}
@@ -41,14 +39,6 @@ export default class QueryParser {
     public static parseQuery(queryLike: any): ParsingResult | null {
         if (!Query.isQueryLike(queryLike)) {
             return null;
-        }
-
-        if (!isNullOrUndefined(queryLike.OPTIONS.ORDER) && (typeof queryLike.OPTIONS.ORDER) !== "string") {
-            queryLike.OPTIONS.ORDER.dir = (<any>SortOrder)[queryLike.OPTIONS.ORDER.dir];
-
-            if (isNullOrUndefined(queryLike.OPTIONS.ORDER.dir)) {
-                return null;
-            }
         }
 
         const query = new Query(queryLike.WHERE, queryLike.OPTIONS, queryLike.TRANSFORMATIONS);

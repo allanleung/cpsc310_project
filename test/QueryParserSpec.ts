@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import QueryParser from "../src/controller/QueryParser";
-import Query, {SortOrder} from "../src/controller/Query";
+import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
@@ -174,7 +174,7 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER: {
-                    dir: SortOrder.UP,
+                    dir: 'UP',
                     keys: ["courses_id", "courses_avg"]
                 },
                 FORM: "TABLE",
@@ -206,10 +206,100 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER: {
-                    dir: SortOrder.DOWN,
+                    dir: 'DOWN',
                     keys: ["courses_id", "courses_avg"]
                 },
                 FORM: "TABLE",
+            }
+        ), 'courses'))
+    });
+
+    it('should fail when an order key is not in columns', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: "DOWN",
+                    keys: ["courses_uuid", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail when ORDER is invalid', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                ORDER: null,
+                FORM: "TABLE"
+            }
+        })).to.be.null;
+    });
+
+    it('should fail when ORDER is not in COLUMNS', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                ORDER: 'courses_avg',
+                FORM: 'TABLE'
+            }
+        })).to.be.null;
+    });
+
+    it('should accept an ORDER in an APPLY block', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_id',
+                    'averagePass'
+                ],
+                ORDER: {
+                    keys: ['averagePass'],
+                    dir: 'UP'
+                },
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: ['courses_id'],
+                APPLY: [{
+                    averagePass: {
+                        AVG: 'courses_avg'
+                    }
+                }]
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'courses_id',
+                    'averagePass'
+                ],
+                ORDER: {
+                    keys: ['averagePass'],
+                    dir: 'UP'
+                },
+                FORM: 'TABLE'
+            },
+            {
+                GROUP: ['courses_id'],
+                APPLY: [{
+                    averagePass: {
+                        AVG: 'courses_avg'
+                    }
+                }]
             }
         ), 'courses'))
     });

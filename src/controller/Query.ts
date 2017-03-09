@@ -46,13 +46,8 @@ export interface QueryOptions {
     FORM: string;
 }
 
-export enum SortOrder {
-    UP,
-    DOWN
-}
-
 export interface Order {
-    dir: SortOrder;
+    dir: string;
     keys: string[];
 }
 
@@ -94,8 +89,7 @@ export function isQueryOptions(item: any): item is QueryOptions {
 
 export function isOrder(item: any, columns: string[]): boolean {
     if (typeof item === 'string') {
-        if (columns.indexOf(item) >= 0)
-            return true;
+        return columns.indexOf(item) >= 0;
     } else if (isObject(item)) {
         const keys = Object.keys(item);
 
@@ -105,17 +99,19 @@ export function isOrder(item: any, columns: string[]): boolean {
         if (keys.indexOf('keys') === -1)
             return false;
 
-        if (keys.length === 2) {
-            for (let key of item.keys) {
-                if (columns.indexOf(key) < 0)
-                    return false;
-            }
-
-            return true;
+        if (keys.length !== 2) {
+            return false;
         }
-    }
 
-    return false;
+        for (let key of item.keys) {
+            if (columns.indexOf(key) < 0)
+                return false;
+        }
+
+        return item.dir === 'UP' || item.dir === 'DOWN';
+    } else {
+        return false;
+    }
 }
 
 export interface Transformations {

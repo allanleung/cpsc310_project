@@ -14,7 +14,7 @@ describe("QueryController.executeQuery", () => {
         dataController.addDataset('courses', [
             {
                 courses_title: "hong kong cinema",
-                courses_uuid: 39426,
+                courses_uuid: '39426',
                 courses_instructor: "bailey, c. d. alison",
                 courses_audit: 1,
                 courses_id: "325",
@@ -25,7 +25,7 @@ describe("QueryController.executeQuery", () => {
             },
             {
                 courses_title: "hong kong cinema",
-                courses_uuid: 39427,
+                courses_uuid: '39427',
                 courses_instructor: "",
                 courses_audit: 1,
                 courses_id: "325",
@@ -36,7 +36,7 @@ describe("QueryController.executeQuery", () => {
             },
             {
                 courses_title: "hong kong cinema 2",
-                courses_uuid: 39428,
+                courses_uuid: '39428',
                 courses_instructor: "some guy 1",
                 courses_audit: 1,
                 courses_id: "315",
@@ -47,7 +47,7 @@ describe("QueryController.executeQuery", () => {
             },
             {
                 courses_title: "vancouver cinema",
-                courses_uuid: 39429,
+                courses_uuid: '39429',
                 courses_instructor: "some guy 2",
                 courses_audit: 1,
                 courses_id: "385",
@@ -62,6 +62,28 @@ describe("QueryController.executeQuery", () => {
     after(() => {
         dataController = null;
         queryController = null;
+    });
+
+    it('should correctly order things ascending with a tie breaker', () => {
+        return expect(queryController.executeQuery(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'courses_avg',
+                    'courses_uuid'
+                ],
+                ORDER: {
+                    dir: 'UP',
+                    keys: ['courses_avg', 'courses_uuid']
+                },
+                FORM: 'TABLE'
+            }
+        ))).to.deep.eq([
+            {courses_uuid: '39426', courses_avg: 71.18},
+            {courses_uuid: '39427', courses_avg: 71.18},
+            {courses_uuid: '39429', courses_avg: 90.5},
+            {courses_uuid: '39428', courses_avg: 98.5}
+        ])
     });
 
     it('should produce the whole dataset when given an empty WHERE clause', () => {
