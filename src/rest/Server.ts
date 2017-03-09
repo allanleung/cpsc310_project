@@ -21,6 +21,7 @@ export default class Server {
     constructor(port: number) {
         Log.info("Server::<init>( " + port + " )");
         this.port = port;
+        this.inface = new InsightFacade();
     }
 
     /**

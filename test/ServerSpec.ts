@@ -9,6 +9,7 @@ import Log from "../src/Util";
 import * as chai from 'chai';
 import chaiHttp = require('chai-http');
 import Response = ChaiHttp.Response;
+import * as fs from "fs";
 
 chai.use(chaiHttp);
 
@@ -24,9 +25,11 @@ describe("ServerSpec", function () {
         return server.stop().then(success => expect(success));
     });
 
-    it('should successfully perform a request', () => {
+    it('Should successfully put', function () {
+        this.timeout(20000);
         return chai.request("http://localhost:8000")
             .put('/dataset/rooms')
+            .attach("body", fs.readFileSync("test/rooms.zip"), "rooms.zip")
             .then(res => {
                 Log.trace('then: ' + res);
                 // some assertions
@@ -37,7 +40,7 @@ describe("ServerSpec", function () {
             });
     });
 
-    it('should successfully perform a request', () => {
+    it('Should successfully delete', () => {
         return chai.request("http://localhost:8000")
             .del('/dataset/rooms')
             .then(res => {
@@ -50,7 +53,7 @@ describe("ServerSpec", function () {
             });
     });
 
-    it('should successfully perform a request', () => {
+    it('Should successfully post', () => {
         return chai.request("http://localhost:8000")
             .post('/query')
             .then(res => {
@@ -62,10 +65,11 @@ describe("ServerSpec", function () {
                 expect.fail();
             });
     });
-
-    it('should successfully perform a request', () => {
+    it('201: the operation was successful and the id already existed (was added in this session or was previously cached).', function () {
+        this.timeout(20000);
         return chai.request("http://localhost:8000")
-            .get('/')
+            .put('/dataset/rooms')
+            .attach("body", fs.readFileSync("test/rooms.zip"), "rooms.zip")
             .then(res => {
                 Log.trace('then: ' + res);
                 // some assertions
@@ -75,4 +79,5 @@ describe("ServerSpec", function () {
                 expect.fail();
             });
     });
+
 });
