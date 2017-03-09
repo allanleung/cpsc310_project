@@ -32,7 +32,7 @@ export default class Query {
     }
 
     public hasOrder(): boolean {
-        return typeof this.OPTIONS.ORDER === 'object' || typeof this.OPTIONS.ORDER === 'string';
+        return isObject(this.OPTIONS.ORDER) || typeof this.OPTIONS.ORDER === 'string';
     }
 
     public hasTransformations(): boolean {
