@@ -1,5 +1,4 @@
 import {keyRegex, isEmptyObject, isObject} from "./IInsightFacade";
-import forEach = require("core-js/fn/array/for-each");
 /**
  * Created by jerome on 2017-02-11.
  *
