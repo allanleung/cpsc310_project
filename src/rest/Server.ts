@@ -7,7 +7,6 @@ import restify = require('restify');
 
 import Log from "../Util";
 import InsightFacade from "../controller/InsightFacade";
-import {bodyParser} from "restify";
 import {InsightResponse} from "../controller/IInsightFacade";
 
 /**
@@ -68,7 +67,7 @@ export default class Server {
                     res.json(putStuff.code, putStuff.body);
                 }).catch(function (putWrongStuff: InsightResponse) {
                     res.json(putWrongStuff.code, putWrongStuff.body);
-                })
+                });
                 return next();
             });
 
@@ -76,17 +75,21 @@ export default class Server {
                 let id = req.params.id;
                 this.inface.removeDataset(id).then (function (deleteStuff: InsightResponse) {
                     res.json(deleteStuff.body);
-                    return next;
-                })
+                }).catch(function (deleteWrongStuff: InsightResponse) {
+                    res.json(deleteWrongStuff.body);
 
+                });
+                return next;
             });
 
             this.rest.post('/query', (req, res, next) => {
                 let id = req.params.id;
                 this.inface.performQuery(id).then( function (postStuff: InsightResponse) {
                     res.send(postStuff.body);
-                    return next();
-                })
+                }).catch (function (postWrongStuff: InsightResponse) {
+                    res.json(postWrongStuff.body);
+                });
+                return next;
             });
 
             this.rest.listen(this.port, () => {
