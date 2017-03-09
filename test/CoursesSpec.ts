@@ -5172,8 +5172,8 @@ describe("CoursesSpec", () => {
                     "courses_avg"
                 ],
                 "ORDER": {
-                    "DIR": "UP",
-                    "KEYS": ["courses_id", "courses_avg"]
+                    "dir": "UP",
+                    "keys": ["courses_id", "courses_avg"]
                 },
                 "FORM":"TABLE"
             }

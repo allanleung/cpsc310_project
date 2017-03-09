@@ -832,5 +832,79 @@ describe('QueryParser.parseQuery', () => {
                 FORM: "TABLE"
             }
         })).to.be.null
-    })
+    });
+
+    it('should fail if new ORDER is null', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:null,
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER doesnt have keys', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{},
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER has invalid keys', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{
+                    DIR: "UP",
+                    KEYS: []
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER has invalid dir', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: { },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{
+                    dir: "abc",
+                    keys: []
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER has invalid keys', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{
+                    dir: "UP",
+                    keys: ["courses_abc"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
 });
