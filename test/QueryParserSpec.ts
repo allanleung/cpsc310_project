@@ -150,13 +150,9 @@ describe('QueryParser.parseQuery', () => {
         ), 'courses'))
     });
 
-    it('should produce a correct query when the query is valid with new order', () => {
+    it('should produce a correct query for new ORDER UP', () => {
         return expect(QueryParser.parseQuery({
-            WHERE: {
-                "IS": {
-                    courses_id: "325"
-                }
-            },
+            WHERE: {},
             OPTIONS: {
                 COLUMNS: [
                     "courses_dept",
@@ -170,11 +166,7 @@ describe('QueryParser.parseQuery', () => {
                 FORM: "TABLE",
             }
         })).to.deep.eq(new ParsingResult(new Query(
-            {
-                "IS": {
-                    courses_id: "325"
-                }
-            },
+            {},
             {
                 COLUMNS: [
                     "courses_dept",
@@ -190,13 +182,9 @@ describe('QueryParser.parseQuery', () => {
         ), 'courses'))
     });
 
-    it('should fail to produce a correct query when the query is valid with new order', () => {
+    it('should produce a correct query for new ORDER DOWN', () => {
         return expect(QueryParser.parseQuery({
-            WHERE: {
-                "IS": {
-                    courses_id: "325"
-                }
-            },
+            WHERE: {},
             OPTIONS: {
                 COLUMNS: [
                     "courses_dept",
@@ -204,12 +192,26 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER:{
-                    DIR: "abc",
-                    KEYS: ["courses_id", "courses_avg"]
+                    dir: "DOWN",
+                    keys: ["courses_id", "courses_avg"]
                 },
                 FORM: "TABLE",
             }
-        })).to.be.null;
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: SortOrder.DOWN,
+                    keys: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        ), 'courses'))
     });
 
     it('should accept queries with room keys', () => {
@@ -892,7 +894,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null;
     });
 
-    it('should fail if new ORDER has invalid keys', () => {
+    it('should fail if new ORDER has missing keys', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
