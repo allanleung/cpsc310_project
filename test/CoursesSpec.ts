@@ -5158,4 +5158,37 @@ describe("CoursesSpec", () => {
             body: {"render":"TABLE","result":[{"courses_dept":"epse","courses_avg":97.09,"courses_year":2007},{"courses_dept":"math","courses_avg":97.09,"courses_year":1900},{"courses_dept":"math","courses_avg":97.09,"courses_year":2010},{"courses_dept":"epse","courses_avg":97.09,"courses_year":1900},{"courses_dept":"math","courses_avg":97.25,"courses_year":1900},{"courses_dept":"math","courses_avg":97.25,"courses_year":2016},{"courses_dept":"epse","courses_avg":97.29,"courses_year":1900},{"courses_dept":"epse","courses_avg":97.29,"courses_year":2010},{"courses_dept":"nurs","courses_avg":97.33,"courses_year":1900},{"courses_dept":"nurs","courses_avg":97.33,"courses_year":2010},{"courses_dept":"epse","courses_avg":97.41,"courses_year":2011},{"courses_dept":"epse","courses_avg":97.41,"courses_year":1900},{"courses_dept":"cnps","courses_avg":97.47,"courses_year":2009},{"courses_dept":"cnps","courses_avg":97.47,"courses_year":1900},{"courses_dept":"math","courses_avg":97.48,"courses_year":1900},{"courses_dept":"math","courses_avg":97.48,"courses_year":2010},{"courses_dept":"educ","courses_avg":97.5,"courses_year":2015},{"courses_dept":"nurs","courses_avg":97.53,"courses_year":1900},{"courses_dept":"nurs","courses_avg":97.53,"courses_year":2015},{"courses_dept":"epse","courses_avg":97.67,"courses_year":2007},{"courses_dept":"epse","courses_avg":97.69,"courses_year":2013},{"courses_dept":"epse","courses_avg":97.78,"courses_year":2009},{"courses_dept":"crwr","courses_avg":98,"courses_year":2013},{"courses_dept":"crwr","courses_avg":98,"courses_year":2013},{"courses_dept":"epse","courses_avg":98.08,"courses_year":2009},{"courses_dept":"nurs","courses_avg":98.21,"courses_year":2015},{"courses_dept":"nurs","courses_avg":98.21,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.36,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.45,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.45,"courses_year":2011},{"courses_dept":"nurs","courses_avg":98.5,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.5,"courses_year":2013},{"courses_dept":"epse","courses_avg":98.58,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.58,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.58,"courses_year":2010},{"courses_dept":"epse","courses_avg":98.58,"courses_year":2012},{"courses_dept":"epse","courses_avg":98.7,"courses_year":2009},{"courses_dept":"nurs","courses_avg":98.71,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.71,"courses_year":2011},{"courses_dept":"eece","courses_avg":98.75,"courses_year":1900},{"courses_dept":"eece","courses_avg":98.75,"courses_year":2009},{"courses_dept":"epse","courses_avg":98.76,"courses_year":2012},{"courses_dept":"epse","courses_avg":98.76,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.8,"courses_year":2014},{"courses_dept":"spph","courses_avg":98.98,"courses_year":1900},{"courses_dept":"spph","courses_avg":98.98,"courses_year":2015},{"courses_dept":"cnps","courses_avg":99.19,"courses_year":2012},{"courses_dept":"math","courses_avg":99.78,"courses_year":1900},{"courses_dept":"math","courses_avg":99.78,"courses_year":2009}]}
         }))
     });
+
+    it('should return the correct result for new sorted by', () => {
+        return insightFacade.performQuery({
+            "WHERE":{ },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_id",
+                    "courses_audit"
+                ],
+                "ORDER": {
+                    "DIR": "up",
+                    "KEYS": ["courses_dept", "courses_id"]
+                },
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.equal(200);
+            expect(response.body["result"]).to.not.be.empty;
+            let lastEntry = null;
+            for (let entry of response.body["result"]) {
+                if (lastEntry !== null) {
+                    expect(entry.courses_dept).to.be.at.least(lastEntry.courses_dept);
+
+                    if (entry.courses_dept === lastEntry.courses_dept) {
+                        expect(entry.courses_id).to.be.at.least(lastEntry.courses_id);
+                    }
+                }
+
+                lastEntry = entry;
+            }
+        });
+    });
 });

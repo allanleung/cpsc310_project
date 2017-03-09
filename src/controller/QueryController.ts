@@ -12,7 +12,8 @@ import Query, {
     GtFilter,
     LtFilter,
     AndFilter,
-    OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg
+    OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg,
+    Order
 } from "./Query";
 import DataController from "./DataController";
 import {isEmptyObject, filterObject} from "./IInsightFacade";
@@ -110,19 +111,48 @@ export default class QueryController {
         return filteredItems;
     }
 
-    private static sortFilteredItems(filteredItems: any[], order: string) {
-        filteredItems.sort((item1, item2) => {
-            let value1 = item1[order];
-            let value2 = item2[order];
+    private static sortFilteredItems(filteredItems: any[], order: Order | string) {
+        if (typeof order === "string") {
+            filteredItems.sort((item1, item2) => {
+                let value1 = item1[order];
+                let value2 = item2[order];
 
-            if (value1 < value2) {
-                return -1;
-            } else if (value1 > value2) {
-                return 1;
-            } else {
-                return 0;
+                if (value1 < value2) {
+                    return -1;
+                } else if (value1 > value2) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+        } else {
+            if (filteredItems.length <= 1) return filteredItems;
+
+            var left = [], right = [], pivot = filteredItems[0];
+
+            for (var i = 1; i < filteredItems.length; i++) {
+                for (let k = 0; k < (<Order>order).KEYS.length; k++) {
+                    let key: string = (<Order>order).KEYS[k];
+                    let pivotValue = pivot[key];
+                    let indexValue = filteredItems[i][key];
+
+                    if (indexValue < pivotValue) {
+                        left.push(filteredItems[i]);
+                        break;
+                    } else if (indexValue === pivotValue) {
+                        continue;
+                    } else {
+                        right.push(filteredItems[i]);
+                        break;
+                    }
+                }
+                // filteredItems[i] < pivot ? left.push(filteredItems[i]) : right.push(filteredItems[i]);
             }
-        });
+
+
+
+            filteredItems = [...QueryController.sortFilteredItems(left, order), pivot, ...QueryController.sortFilteredItems(right, order)];
+        }
     }
 
     private static renderItems(filteredItems: any[], columns: string[]): any[] {

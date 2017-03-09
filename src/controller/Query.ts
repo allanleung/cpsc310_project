@@ -1,4 +1,5 @@
 import {keyRegex, isEmptyObject, isObject} from "./IInsightFacade";
+import forEach = require("core-js/fn/array/for-each");
 /**
  * Created by jerome on 2017-02-11.
  *
@@ -32,7 +33,7 @@ export default class Query {
     }
 
     public hasOrder(): boolean {
-        return typeof this.OPTIONS.ORDER === 'string';
+        return typeof this.OPTIONS.ORDER === 'object' || typeof this.OPTIONS.ORDER === 'string';
     }
 
     public hasTransformations(): boolean {
@@ -42,8 +43,13 @@ export default class Query {
 
 export interface QueryOptions {
     COLUMNS: string[];
-    ORDER?: string;
+    ORDER?: Order | string;
     FORM: string;
+}
+
+export interface Order {
+    DIR: string;
+    KEYS: string[];
 }
 
 export function isQueryOptions(item: any): item is QueryOptions {
@@ -77,8 +83,15 @@ export function isQueryOptions(item: any): item is QueryOptions {
         return false;
 
     if (keys.length === 3) {
-        if (item.COLUMNS.indexOf(item.ORDER) < 0)
-            return false;
+        if (typeof item.ORDER == "string") {
+            if (item.COLUMNS.indexOf(item.ORDER) < 0)
+                return false;
+        } else {
+            for (let key of (<Order>item.ORDER).KEYS) {
+                if (item.COLUMNS.indexOf(key) < 0)
+                    return false;
+            }
+        }
     }
 
     return item.FORM === 'TABLE';

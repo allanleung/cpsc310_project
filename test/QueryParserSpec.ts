@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import QueryParser from "../src/controller/QueryParser";
-import Query from "../src/controller/Query";
+import Query, {Order} from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
@@ -129,6 +129,46 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER: "courses_avg",
+                FORM: "TABLE",
+            }
+        ), 'courses'))
+    });
+
+    it('should produce a correct query when the query is valid with new order', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {
+                "IS": {
+                    courses_id: "325"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    DIR: "up",
+                    KEYS: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {
+                "IS": {
+                    courses_id: "325"
+                }
+            },
+            {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    DIR: "up",
+                    KEYS: ["courses_id", "courses_avg"]
+                },
                 FORM: "TABLE",
             }
         ), 'courses'))
