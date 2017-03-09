@@ -127,8 +127,7 @@ export default class QueryController {
             });
         } else {
             filteredItems.sort((item1, item2) => {
-                for (let k = 0; k < (<Order>order).KEYS.length; k++) {
-                    let key: string = (<Order>order).KEYS[k];
+                for (let key of (<Order>order).KEYS) {
                     let value1 = item1[key];
                     let value2 = item2[key];
 
