@@ -13,7 +13,7 @@ import Query, {
     LtFilter,
     AndFilter,
     OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg,
-    Order
+    Order, SortOrder
 } from "./Query";
 import DataController from "./DataController";
 import {isEmptyObject, filterObject} from "./IInsightFacade";
@@ -126,32 +126,21 @@ export default class QueryController {
                 }
             });
         } else {
-            if (filteredItems.length <= 1) return filteredItems;
-
-            var left = [], right = [], pivot = filteredItems[0];
-
-            for (var i = 1; i < filteredItems.length; i++) {
+            filteredItems.sort((item1, item2) => {
                 for (let k = 0; k < (<Order>order).KEYS.length; k++) {
                     let key: string = (<Order>order).KEYS[k];
-                    let pivotValue = pivot[key];
-                    let indexValue = filteredItems[i][key];
+                    let value1 = item1[key];
+                    let value2 = item2[key];
 
-                    if (indexValue < pivotValue) {
-                        left.push(filteredItems[i]);
-                        break;
-                    } else if (indexValue === pivotValue) {
-                        continue;
-                    } else {
-                        right.push(filteredItems[i]);
-                        break;
+                    if (value1 < value2) {
+                        return (<Order>order).DIR == SortOrder.UP ? -1 : 1;
+                    } else if (value1 > value2) {
+                        return(<Order>order).DIR == SortOrder.UP ? 1 : -1;
                     }
                 }
-                // filteredItems[i] < pivot ? left.push(filteredItems[i]) : right.push(filteredItems[i]);
-            }
 
-
-
-            filteredItems = [...QueryController.sortFilteredItems(left, order), pivot, ...QueryController.sortFilteredItems(right, order)];
+                return 0;
+            });
         }
     }
 

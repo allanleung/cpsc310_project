@@ -1,5 +1,5 @@
-import InsightFacade from "../src/controller/InsightFacade";
 import {expect} from 'chai';
+import InsightFacade from "../src/controller/InsightFacade";
 import * as fs from 'fs';
 
 describe("CoursesSpec", () => {
@@ -5161,16 +5161,19 @@ describe("CoursesSpec", () => {
 
     it('should return the correct result for new sorted by', () => {
         return insightFacade.performQuery({
-            "WHERE":{ },
+            "WHERE":{
+                "GT":{
+                    "courses_avg":80
+                }
+            },
             "OPTIONS":{
                 "COLUMNS":[
-                    "courses_dept",
                     "courses_id",
-                    "courses_audit"
+                    "courses_avg"
                 ],
                 "ORDER": {
-                    "DIR": "up",
-                    "KEYS": ["courses_dept", "courses_id"]
+                    "DIR": "UP",
+                    "KEYS": ["courses_id", "courses_avg"]
                 },
                 "FORM":"TABLE"
             }
@@ -5180,10 +5183,10 @@ describe("CoursesSpec", () => {
             let lastEntry = null;
             for (let entry of response.body["result"]) {
                 if (lastEntry !== null) {
-                    expect(entry.courses_dept).to.be.at.least(lastEntry.courses_dept);
+                    expect(entry.courses_id).to.be.at.least(lastEntry.courses_id);
 
-                    if (entry.courses_dept === lastEntry.courses_dept) {
-                        expect(entry.courses_id).to.be.at.least(lastEntry.courses_id);
+                    if (entry.courses_id === lastEntry.courses_id) {
+                        expect(entry.courses_avg).to.be.at.least(lastEntry.courses_avg);
                     }
                 }
 

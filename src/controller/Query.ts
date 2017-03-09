@@ -46,8 +46,13 @@ export interface QueryOptions {
     FORM: string;
 }
 
+export enum SortOrder {
+    UP,
+    DOWN
+}
+
 export interface Order {
-    DIR: string;
+    DIR: SortOrder;
     KEYS: string[];
 }
 

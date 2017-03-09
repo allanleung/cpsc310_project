@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import QueryParser from "../src/controller/QueryParser";
-import Query, {Order} from "../src/controller/Query";
+import Query, {Order, SortOrder} from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
@@ -147,8 +147,8 @@ describe('QueryParser.parseQuery', () => {
                     "courses_id",
                     "courses_avg"
                 ],
-                ORDER: {
-                    DIR: "up",
+                ORDER:{
+                    DIR: "UP",
                     KEYS: ["courses_id", "courses_avg"]
                 },
                 FORM: "TABLE",
@@ -166,12 +166,34 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER: {
-                    DIR: "up",
+                    DIR: SortOrder.UP,
                     KEYS: ["courses_id", "courses_avg"]
                 },
                 FORM: "TABLE",
             }
         ), 'courses'))
+    });
+
+    it('should fail to produce a correct query when the query is valid with new order', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {
+                "IS": {
+                    courses_id: "325"
+                }
+            },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER:{
+                    DIR: "abc",
+                    KEYS: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
     });
 
     it('should accept queries with room keys', () => {
