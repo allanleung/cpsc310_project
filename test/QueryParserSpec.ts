@@ -909,4 +909,11 @@ describe('QueryParser.parseQuery', () => {
             }
         })).to.be.null;
     });
+
+    it('should fail if options null', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: null
+        })).to.be.null;
+    });
 });

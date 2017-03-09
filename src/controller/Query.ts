@@ -87,7 +87,7 @@ export function isQueryOptions(item: any): item is QueryOptions {
         return false;
 
     if (keys.length === 3 && !isOrder(item.ORDER, item.COLUMNS))
-        return false
+        return false;
 
     return item.FORM === 'TABLE';
 }
