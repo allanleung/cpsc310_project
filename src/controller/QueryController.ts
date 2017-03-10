@@ -12,10 +12,12 @@ import Query, {
     GtFilter,
     LtFilter,
     AndFilter,
-    OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg
+    OrFilter, Apply, isApplyCount, isApplyMax, isApplyMin, isApplySum, isApplyAvg,
+    Order
 } from "./Query";
 import DataController from "./DataController";
 import {isEmptyObject, filterObject} from "./IInsightFacade";
+import {isUndefined} from "util";
 /**
  * Created by jerome on 2017-02-10.
  *
@@ -43,30 +45,28 @@ export default class QueryController {
     }
 
     private static groupFilteredItems(items: any[], groups: string[], apply: Apply[]): any[] {
-        const categories: {
-            groupKey: any,
-            items: any[]
-        }[] = [];
+        const categories: { [key: string]: any[] } = {};
 
         for (let item of items) {
             const key = filterObject(item, key => groups.indexOf(key) > -1);
 
-            const category = categories.find(category =>
-                groups.every(group => key[group] === category.groupKey[group]));
+            const groupKey = JSON.stringify(key);
 
-            if (category === undefined) {
-                categories.push({
-                    groupKey: key,
-                    items: [item]
-                })
+            if (isUndefined(categories[groupKey])) {
+                categories[groupKey] = [item]
             } else {
-                category.items.push(item)
+                categories[groupKey].push(item)
             }
         }
 
-        return categories.map(({groupKey, items}) => {
-            return Object.assign(groupKey, QueryController.generateApplyKeys(apply, items))
-        });
+        const results = [];
+
+        for (let groupKey in categories) {
+            const key = JSON.parse(groupKey);
+            results.push(Object.assign(key, QueryController.generateApplyKeys(apply, categories[groupKey])));
+        }
+
+        return results;
     }
 
     private static generateApplyKeys(apply: Apply[], items: any[]): {[key: string]: number} {
@@ -110,18 +110,26 @@ export default class QueryController {
         return filteredItems;
     }
 
-    private static sortFilteredItems(filteredItems: any[], order: string) {
-        filteredItems.sort((item1, item2) => {
-            let value1 = item1[order];
-            let value2 = item2[order];
+    private static sortFilteredItems(filteredItems: any[], order: Order | string) {
+        const sortKeys = typeof order === 'string' ? [order] : order.keys;
+        const direction = typeof order === 'string' ? 'UP' : order.dir;
 
-            if (value1 < value2) {
-                return -1;
-            } else if (value1 > value2) {
-                return 1;
-            } else {
-                return 0;
+        const before = direction === 'UP' ? -1 : 1;
+        const after = -before;
+
+        filteredItems.sort((item1, item2) => {
+            for (let key of sortKeys) {
+                let value1 = item1[key];
+                let value2 = item2[key];
+
+                if (value1 < value2) {
+                    return before;
+                } else if (value1 > value2) {
+                    return after;
+                }
             }
+
+            return 0;
         });
     }
 

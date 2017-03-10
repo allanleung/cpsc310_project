@@ -19,6 +19,7 @@ describe("Log", () => {
     });
 });
 
+/*
 describe("InsightFacade.addDataset", () => {
     let insightFacade: InsightFacade = null;
     let courses: string;
@@ -328,3 +329,4 @@ describe("InsightFacade.performQuery", () => {
         })
     });
 });
+*/

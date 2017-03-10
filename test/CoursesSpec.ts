@@ -1,10 +1,11 @@
-import InsightFacade from "../src/controller/InsightFacade";
 import {expect} from 'chai';
+import InsightFacade from "../src/controller/InsightFacade";
 import * as fs from 'fs';
 
 describe("CoursesSpec", () => {
     let insightFacade = new InsightFacade(false);
     const allCourses = JSON.parse(fs.readFileSync('test/allcourses.json').toString('utf8'));
+    const allInstructorsGrouped = JSON.parse(fs.readFileSync('test/allInstructorsGrouped.json').toString('utf8'));
 
     before(function() {
         this.timeout(10000);
@@ -16,13 +17,47 @@ describe("CoursesSpec", () => {
         this.timeout(50000000);
 
         return insightFacade.performQuery({
-            "WHERE": {}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id", "courses_avg", "courses_instructor", "courses_title", "courses_pass", "courses_fail", "courses_audit", "courses_uuid", "courses_year"], "ORDER": "courses_id", "FORM": "TABLE"}
+            "WHERE": {}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id", "courses_avg", "courses_instructor", "courses_title", "courses_pass", "courses_fail", "courses_audit", "courses_uuid", "courses_year"], "ORDER": {"keys": ["courses_id"], "dir": "UP"}, "FORM": "TABLE"}
         }).then(response => {
             expect(response.code).to.eq(200);
             expect(response.body.result.length).to.eq(allCourses.result.length);
 
             for (let idx = 0; idx < response.body.result.length; idx++) {
                 expect(response.body.result[idx]).to.deep.eq(allCourses.result[idx]);
+            }
+        })
+    });
+
+    it('should return the correct result for all courses', function () {
+        this.timeout(50000000);
+
+        return insightFacade.performQuery({
+            "WHERE": {},
+            "TRANSFORMATIONS": {
+                "GROUP": ["courses_instructor"],
+                "APPLY": [{
+                    "averageMark": {
+                        "AVG": "courses_avg"
+                    }
+                }]
+            },
+            "OPTIONS": {
+                "COLUMNS": [
+                    "courses_instructor",
+                    "averageMark"
+                ],
+                "ORDER": {
+                    "keys": ["averageMark", "courses_instructor"],
+                    "dir": "DOWN"
+                },
+                "FORM": "TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.eq(200);
+            expect(response.body.result.length).to.eq(allInstructorsGrouped.result.length);
+
+            for (let idx = 0; idx < response.body.result.length; idx++) {
+                expect(response.body.result[idx]).to.deep.eq(allInstructorsGrouped.result[idx]);
             }
         })
     });
@@ -5158,4 +5193,68 @@ describe("CoursesSpec", () => {
             body: {"render":"TABLE","result":[{"courses_dept":"epse","courses_avg":97.09,"courses_year":2007},{"courses_dept":"math","courses_avg":97.09,"courses_year":1900},{"courses_dept":"math","courses_avg":97.09,"courses_year":2010},{"courses_dept":"epse","courses_avg":97.09,"courses_year":1900},{"courses_dept":"math","courses_avg":97.25,"courses_year":1900},{"courses_dept":"math","courses_avg":97.25,"courses_year":2016},{"courses_dept":"epse","courses_avg":97.29,"courses_year":1900},{"courses_dept":"epse","courses_avg":97.29,"courses_year":2010},{"courses_dept":"nurs","courses_avg":97.33,"courses_year":1900},{"courses_dept":"nurs","courses_avg":97.33,"courses_year":2010},{"courses_dept":"epse","courses_avg":97.41,"courses_year":2011},{"courses_dept":"epse","courses_avg":97.41,"courses_year":1900},{"courses_dept":"cnps","courses_avg":97.47,"courses_year":2009},{"courses_dept":"cnps","courses_avg":97.47,"courses_year":1900},{"courses_dept":"math","courses_avg":97.48,"courses_year":1900},{"courses_dept":"math","courses_avg":97.48,"courses_year":2010},{"courses_dept":"educ","courses_avg":97.5,"courses_year":2015},{"courses_dept":"nurs","courses_avg":97.53,"courses_year":1900},{"courses_dept":"nurs","courses_avg":97.53,"courses_year":2015},{"courses_dept":"epse","courses_avg":97.67,"courses_year":2007},{"courses_dept":"epse","courses_avg":97.69,"courses_year":2013},{"courses_dept":"epse","courses_avg":97.78,"courses_year":2009},{"courses_dept":"crwr","courses_avg":98,"courses_year":2013},{"courses_dept":"crwr","courses_avg":98,"courses_year":2013},{"courses_dept":"epse","courses_avg":98.08,"courses_year":2009},{"courses_dept":"nurs","courses_avg":98.21,"courses_year":2015},{"courses_dept":"nurs","courses_avg":98.21,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.36,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.45,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.45,"courses_year":2011},{"courses_dept":"nurs","courses_avg":98.5,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.5,"courses_year":2013},{"courses_dept":"epse","courses_avg":98.58,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.58,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.58,"courses_year":2010},{"courses_dept":"epse","courses_avg":98.58,"courses_year":2012},{"courses_dept":"epse","courses_avg":98.7,"courses_year":2009},{"courses_dept":"nurs","courses_avg":98.71,"courses_year":1900},{"courses_dept":"nurs","courses_avg":98.71,"courses_year":2011},{"courses_dept":"eece","courses_avg":98.75,"courses_year":1900},{"courses_dept":"eece","courses_avg":98.75,"courses_year":2009},{"courses_dept":"epse","courses_avg":98.76,"courses_year":2012},{"courses_dept":"epse","courses_avg":98.76,"courses_year":1900},{"courses_dept":"epse","courses_avg":98.8,"courses_year":2014},{"courses_dept":"spph","courses_avg":98.98,"courses_year":1900},{"courses_dept":"spph","courses_avg":98.98,"courses_year":2015},{"courses_dept":"cnps","courses_avg":99.19,"courses_year":2012},{"courses_dept":"math","courses_avg":99.78,"courses_year":1900},{"courses_dept":"math","courses_avg":99.78,"courses_year":2009}]}
         }))
     });
+
+    it('should return the correct result for new sorted by', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "GT":{
+                    "courses_avg":80
+                }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_id",
+                    "courses_avg"
+                ],
+                "ORDER": {
+                    "dir": "UP",
+                    "keys": ["courses_id", "courses_avg"]
+                },
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.equal(200);
+            expect(response.body["result"]).to.not.be.empty;
+            let lastEntry = null;
+            for (let entry of response.body["result"]) {
+                if (lastEntry !== null) {
+                    expect(entry.courses_id).to.be.at.least(lastEntry.courses_id);
+
+                    if (entry.courses_id === lastEntry.courses_id) {
+                        expect(entry.courses_avg).to.be.at.least(lastEntry.courses_avg);
+                    }
+                }
+
+                lastEntry = entry;
+            }
+        });
+    });
+
+    it('should return the correct result for new sorted by results', () => {
+        return insightFacade.performQuery({
+            "WHERE":{
+                "GT":{
+                    "courses_avg":96
+                }
+            },
+            "OPTIONS":{
+                "COLUMNS":[
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                "ORDER": {
+                    "dir": "UP",
+                    "keys": ["courses_id", "courses_avg"]
+                },
+                "FORM":"TABLE"
+            }
+        }).then(response => {
+            expect(response).to.deep.equal({
+                code: 200,
+                body: {"render":"TABLE","result":[{"courses_dept":"midw","courses_id":"101","courses_avg":96.5},{"courses_dept":"midw","courses_id":"101","courses_avg":96.5},{"courses_dept":"spph","courses_id":"200","courses_avg":96.96},{"courses_dept":"spph","courses_id":"300","courses_avg":98.98},{"courses_dept":"spph","courses_id":"300","courses_avg":98.98},{"courses_dept":"epse","courses_id":"312","courses_avg":96.03},{"courses_dept":"epse","courses_id":"312","courses_avg":96.03},{"courses_dept":"epse","courses_id":"312","courses_avg":96.9},{"courses_dept":"epse","courses_id":"312","courses_avg":96.9},{"courses_dept":"adhe","courses_id":"329","courses_avg":96.11},{"courses_dept":"fipr","courses_id":"333","courses_avg":96.4},{"courses_dept":"fipr","courses_id":"333","courses_avg":96.4},{"courses_dept":"mine","courses_id":"393","courses_avg":96.59},{"courses_dept":"epse","courses_id":"421","courses_avg":96.21},{"courses_dept":"epse","courses_id":"421","courses_avg":97.29},{"courses_dept":"epse","courses_id":"421","courses_avg":97.29},{"courses_dept":"epse","courses_id":"421","courses_avg":98.08},{"courses_dept":"epse","courses_id":"421","courses_avg":98.36},{"courses_dept":"epse","courses_id":"421","courses_avg":98.7},{"courses_dept":"epse","courses_id":"432","courses_avg":96.21},{"courses_dept":"epse","courses_id":"432","courses_avg":96.21},{"courses_dept":"epse","courses_id":"449","courses_avg":96.24},{"courses_dept":"epse","courses_id":"449","courses_avg":97.41},{"courses_dept":"epse","courses_id":"449","courses_avg":98.58},{"courses_dept":"epse","courses_id":"449","courses_avg":98.58},{"courses_dept":"epse","courses_id":"449","courses_avg":98.76},{"courses_dept":"epse","courses_id":"449","courses_avg":98.76},{"courses_dept":"epse","courses_id":"449","courses_avg":98.8},{"courses_dept":"educ","courses_id":"500","courses_avg":97.5},{"courses_dept":"math","courses_id":"502","courses_avg":96.44},{"courses_dept":"math","courses_id":"502","courses_avg":96.44},{"courses_dept":"sowk","courses_id":"505","courses_avg":96.15},{"courses_dept":"sowk","courses_id":"505","courses_avg":96.15},{"courses_dept":"epse","courses_id":"505","courses_avg":96.23},{"courses_dept":"civl","courses_id":"508","courses_avg":96.27},{"courses_dept":"civl","courses_id":"508","courses_avg":96.27},{"courses_dept":"nurs","courses_id":"509","courses_avg":98.21},{"courses_dept":"nurs","courses_id":"509","courses_avg":98.21},{"courses_dept":"nurs","courses_id":"509","courses_avg":98.71},{"courses_dept":"nurs","courses_id":"509","courses_avg":98.71},{"courses_dept":"spph","courses_id":"515","courses_avg":96.8},{"courses_dept":"spph","courses_id":"515","courses_avg":96.8},{"courses_dept":"math","courses_id":"516","courses_avg":96.25},{"courses_dept":"math","courses_id":"516","courses_avg":96.25},{"courses_dept":"epse","courses_id":"519","courses_avg":98.45},{"courses_dept":"epse","courses_id":"519","courses_avg":98.45},{"courses_dept":"edst","courses_id":"520","courses_avg":96.46},{"courses_dept":"edst","courses_id":"520","courses_avg":96.46},{"courses_dept":"etec","courses_id":"521","courses_avg":96.47},{"courses_dept":"etec","courses_id":"521","courses_avg":96.47},{"courses_dept":"math","courses_id":"525","courses_avg":97.25},{"courses_dept":"math","courses_id":"525","courses_avg":97.25},{"courses_dept":"epse","courses_id":"526","courses_avg":96.33},{"courses_dept":"epse","courses_id":"526","courses_avg":96.33},{"courses_dept":"math","courses_id":"527","courses_avg":99.78},{"courses_dept":"math","courses_id":"527","courses_avg":99.78},{"courses_dept":"math","courses_id":"532","courses_avg":97.48},{"courses_dept":"math","courses_id":"532","courses_avg":97.48},{"courses_dept":"epse","courses_id":"534","courses_avg":97},{"courses_dept":"epse","courses_id":"534","courses_avg":97.41},{"courses_dept":"epse","courses_id":"534","courses_avg":97.78},{"courses_dept":"math","courses_id":"541","courses_avg":97.09},{"courses_dept":"math","courses_id":"541","courses_avg":97.09},{"courses_dept":"eece","courses_id":"541","courses_avg":98.75},{"courses_dept":"eece","courses_id":"541","courses_avg":98.75},{"courses_dept":"math","courses_id":"545","courses_avg":96.83},{"courses_dept":"math","courses_id":"545","courses_avg":96.83},{"courses_dept":"psyc","courses_id":"549","courses_avg":97},{"courses_dept":"epse","courses_id":"549","courses_avg":97.69},{"courses_dept":"arst","courses_id":"550","courses_avg":96.94},{"courses_dept":"arst","courses_id":"550","courses_avg":96.94},{"courses_dept":"sowk","courses_id":"551","courses_avg":96.09},{"courses_dept":"musc","courses_id":"559","courses_avg":96.5},{"courses_dept":"musc","courses_id":"559","courses_avg":96.5},{"courses_dept":"frst","courses_id":"562","courses_avg":96.36},{"courses_dept":"frst","courses_id":"562","courses_avg":96.36},{"courses_dept":"mtrl","courses_id":"564","courses_avg":96.25},{"courses_dept":"mtrl","courses_id":"564","courses_avg":96.25},{"courses_dept":"kin","courses_id":"565","courses_avg":96.06},{"courses_dept":"kin","courses_id":"565","courses_avg":96.06},{"courses_dept":"audi","courses_id":"568","courses_avg":96.9},{"courses_dept":"audi","courses_id":"568","courses_avg":96.9},{"courses_dept":"cnps","courses_id":"574","courses_avg":97.47},{"courses_dept":"cnps","courses_id":"574","courses_avg":97.47},{"courses_dept":"cnps","courses_id":"574","courses_avg":99.19},{"courses_dept":"libr","courses_id":"575","courses_avg":96.1},{"courses_dept":"libr","courses_id":"575","courses_avg":96.1},{"courses_dept":"nurs","courses_id":"578","courses_avg":96.64},{"courses_dept":"nurs","courses_id":"578","courses_avg":96.64},{"courses_dept":"nurs","courses_id":"578","courses_avg":97.53},{"courses_dept":"nurs","courses_id":"578","courses_avg":97.53},{"courses_dept":"nurs","courses_id":"578","courses_avg":98.5},{"courses_dept":"nurs","courses_id":"578","courses_avg":98.5},{"courses_dept":"nurs","courses_id":"578","courses_avg":98.58},{"courses_dept":"nurs","courses_id":"578","courses_avg":98.58},{"courses_dept":"cnps","courses_id":"584","courses_avg":96.16},{"courses_dept":"cnps","courses_id":"584","courses_avg":96.33},{"courses_dept":"math","courses_id":"589","courses_avg":96.33},{"courses_dept":"nurs","courses_id":"591","courses_avg":96.73},{"courses_dept":"nurs","courses_id":"591","courses_avg":96.73},{"courses_dept":"nurs","courses_id":"591","courses_avg":97.33},{"courses_dept":"nurs","courses_id":"591","courses_avg":97.33},{"courses_dept":"plan","courses_id":"595","courses_avg":96.47},{"courses_dept":"plan","courses_id":"595","courses_avg":96.47},{"courses_dept":"epse","courses_id":"596","courses_avg":97.09},{"courses_dept":"epse","courses_id":"596","courses_avg":97.09},{"courses_dept":"crwr","courses_id":"599","courses_avg":97},{"courses_dept":"crwr","courses_id":"599","courses_avg":98},{"courses_dept":"crwr","courses_id":"599","courses_avg":98},{"courses_dept":"epse","courses_id":"606","courses_avg":97.67}]}
+            });
+        });
+    });
 });
+

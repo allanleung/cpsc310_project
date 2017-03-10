@@ -37,8 +37,9 @@ export default class QueryParser {
      * @returns {any} a new QueryParser, or a list of missing dataSets, or null if the query is invalid
      */
     public static parseQuery(queryLike: any): ParsingResult | null {
-        if (!Query.isQueryLike(queryLike))
+        if (!Query.isQueryLike(queryLike)) {
             return null;
+        }
 
         const query = new Query(queryLike.WHERE, queryLike.OPTIONS, queryLike.TRANSFORMATIONS);
 

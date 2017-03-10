@@ -4,6 +4,22 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should allow a D3 style order', ()=> {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: "DOWN",
+
+                }
+            }
+        }))
+    });
+
     it('should fail if GROUPS is empty', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
@@ -130,6 +146,160 @@ describe('QueryParser.parseQuery', () => {
                 ],
                 ORDER: "courses_avg",
                 FORM: "TABLE",
+            }
+        ), 'courses'))
+    });
+
+    it('should produce a correct query for new ORDER UP', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER:{
+                    dir: "UP",
+                    keys: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: 'UP',
+                    keys: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        ), 'courses'))
+    });
+
+    it('should produce a correct query for new ORDER DOWN', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER:{
+                    dir: "DOWN",
+                    keys: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: 'DOWN',
+                    keys: ["courses_id", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        ), 'courses'))
+    });
+
+    it('should fail when an order key is not in columns', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_dept",
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    dir: "DOWN",
+                    keys: ["courses_uuid", "courses_avg"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail when ORDER is invalid', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                ORDER: null,
+                FORM: "TABLE"
+            }
+        })).to.be.null;
+    });
+
+    it('should fail when ORDER is not in COLUMNS', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_dept'
+                ],
+                ORDER: 'courses_avg',
+                FORM: 'TABLE'
+            }
+        })).to.be.null;
+    });
+
+    it('should accept an ORDER in an APPLY block', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'courses_id',
+                    'averagePass'
+                ],
+                ORDER: {
+                    keys: ['averagePass'],
+                    dir: 'UP'
+                },
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: ['courses_id'],
+                APPLY: [{
+                    averagePass: {
+                        AVG: 'courses_avg'
+                    }
+                }]
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'courses_id',
+                    'averagePass'
+                ],
+                ORDER: {
+                    keys: ['averagePass'],
+                    dir: 'UP'
+                },
+                FORM: 'TABLE'
+            },
+            {
+                GROUP: ['courses_id'],
+                APPLY: [{
+                    averagePass: {
+                        AVG: 'courses_avg'
+                    }
+                }]
             }
         ), 'courses'))
     });
@@ -754,5 +924,86 @@ describe('QueryParser.parseQuery', () => {
                 FORM: "TABLE"
             }
         })).to.be.null
-    })
+    });
+
+    it('should fail if new ORDER is null', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:null,
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER doesnt have keys', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{},
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER has invalid keys', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{
+                    DIR: "UP",
+                    KEYS: []
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER has invalid dir', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: { },
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{
+                    dir: "abc",
+                    keys: []
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if new ORDER has missing keys', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    "courses_id"
+                ],
+                ORDER:{
+                    dir: "UP",
+                    keys: ["courses_abc"]
+                },
+                FORM: "TABLE",
+            }
+        })).to.be.null;
+    });
+
+    it('should fail if options null', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: null
+        })).to.be.null;
+    });
 });

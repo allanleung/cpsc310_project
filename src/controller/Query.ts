@@ -32,7 +32,7 @@ export default class Query {
     }
 
     public hasOrder(): boolean {
-        return typeof this.OPTIONS.ORDER === 'string';
+        return isObject(this.OPTIONS.ORDER) || typeof this.OPTIONS.ORDER === 'string';
     }
 
     public hasTransformations(): boolean {
@@ -42,8 +42,13 @@ export default class Query {
 
 export interface QueryOptions {
     COLUMNS: string[];
-    ORDER?: string;
+    ORDER?: Order | string;
     FORM: string;
+}
+
+export interface Order {
+    dir: string;
+    keys: string[];
 }
 
 export function isQueryOptions(item: any): item is QueryOptions {
@@ -76,12 +81,37 @@ export function isQueryOptions(item: any): item is QueryOptions {
     if (item.COLUMNS.some((entry: any) => entry.indexOf('_') > -1 && entry.match(keyRegex) === null))
         return false;
 
-    if (keys.length === 3) {
-        if (item.COLUMNS.indexOf(item.ORDER) < 0)
-            return false;
-    }
+    if (keys.length === 3 && !isOrder(item.ORDER, item.COLUMNS))
+        return false;
 
     return item.FORM === 'TABLE';
+}
+
+export function isOrder(item: any, columns: string[]): boolean {
+    if (typeof item === 'string') {
+        return columns.indexOf(item) >= 0;
+    } else if (isObject(item)) {
+        const keys = Object.keys(item);
+
+        if (keys.indexOf('dir') === -1)
+            return false;
+
+        if (keys.indexOf('keys') === -1)
+            return false;
+
+        if (keys.length !== 2) {
+            return false;
+        }
+
+        for (let key of item.keys) {
+            if (columns.indexOf(key) < 0)
+                return false;
+        }
+
+        return item.dir === 'UP' || item.dir === 'DOWN';
+    } else {
+        return false;
+    }
 }
 
 export interface Transformations {
