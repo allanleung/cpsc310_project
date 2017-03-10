@@ -41,8 +41,6 @@ describe("ServerSpec", function () {
     });
 
     it('Should successfully delete', () => {
-
-
         return chai.request("http://localhost:8000")
             .del('/dataset/rooms')
             .then(res => {
@@ -57,18 +55,20 @@ describe("ServerSpec", function () {
             });
     });
 
-    it('Should successfully post', () => {
-        return chai.request("http://localhost:8000")
-            .post('/query')
-            .then(res => {
-                Log.trace('then: ' + res);
-                // some assertions
-            }, err => {
-                Log.trace('catch: ' + err);
-                // some assertions
-                expect.fail();
-            });
-    });
+    // it('Should successfully post', () => {
+    //     return chai.request("http://localhost:8000")
+    //         .post('/query')
+    //         .then(res => {
+    //             Log.trace('then: ' + res);
+    //             // some assertions
+    //         }, err => {
+    //             Log.trace('catch: ' + err);
+    //             // some assertions
+    //             expect.fail();
+    //         });
+    // });
+
+    // TODO: Tests should be idempotent, if you want to explicitly test this case it should be within a test that already adds the dataset.  Order shouldnt matter.
     it('201: the operation was successful and the id already existed (was added in this session or was previously cached).', function () {
         this.timeout(20000);
         return chai.request("http://localhost:8000")
