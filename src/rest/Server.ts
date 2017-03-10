@@ -6,6 +6,8 @@
 import restify = require('restify');
 
 import Log from "../Util";
+import InsightFacade from "../controller/InsightFacade";
+import {InsightResponse} from "../controller/IInsightFacade";
 
 /**
  * This configures the REST endpoints for the server.
@@ -14,10 +16,12 @@ export default class Server {
 
     private port: number;
     private rest: restify.Server;
+    private inface: InsightFacade;
 
     constructor(port: number) {
         Log.info("Server::<init>( " + port + " )");
         this.port = port;
+        this.inface = new InsightFacade();
     }
 
     /**
@@ -58,18 +62,35 @@ export default class Server {
             });
 
             this.rest.put('/dataset/:id', (req, res, next) => {
-                res.send(405);
+                let dataStr = new Buffer(req.params.body).toString('base64');
+                let id = req.params.id;
+                this.inface.addDataset(id, dataStr).then (function (putStuff: InsightResponse) {
+                    res.json(putStuff.code, putStuff.body);
+                }).catch(function (putWrongStuff: InsightResponse) {
+                    res.json(putWrongStuff.code, putWrongStuff.body);
+                });
                 return next();
             });
 
             this.rest.del('/dataset/:id', (req, res, next) => {
-                res.send(405);
-                return next();
+                let id = req.params.id;
+                this.inface.removeDataset(id).then (function (deleteStuff: InsightResponse) {
+                    res.json(deleteStuff.body);
+                }).catch(function (deleteWrongStuff: InsightResponse) {
+                    res.json(deleteWrongStuff.body);
+
+                });
+                return next;
             });
 
             this.rest.post('/query', (req, res, next) => {
-                res.send(405);
-                return next();
+                let id = req.params.id;
+                this.inface.performQuery(id).then( function (postStuff: InsightResponse) {
+                    res.send(postStuff.body);
+                }).catch (function (postWrongStuff: InsightResponse) {
+                    res.json(postWrongStuff.body);
+                });
+                return next;
             });
 
             this.rest.listen(this.port, () => {
