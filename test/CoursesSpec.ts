@@ -2,7 +2,6 @@ import {expect} from 'chai';
 import InsightFacade from "../src/controller/InsightFacade";
 import * as fs from 'fs';
 
-/*
 describe("CoursesSpec", () => {
     let insightFacade = new InsightFacade(false);
     const allCourses = JSON.parse(fs.readFileSync('test/allcourses.json').toString('utf8'));
@@ -5258,4 +5257,4 @@ describe("CoursesSpec", () => {
         });
     });
 });
-*/
+
