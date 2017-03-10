@@ -84,10 +84,9 @@ export default class Server {
             });
 
             this.rest.post('/query', (req, res, next) => {
-                let id = req.params.id;
-                this.inface.performQuery(id).then( function (postStuff: InsightResponse) {
+                this.inface.performQuery(req.body).then( postStuff => {
                     res.json(postStuff.code, postStuff.body);
-                }).catch (function (postWrongStuff: InsightResponse) {
+                }).catch (postWrongStuff => {
                     res.json(postWrongStuff.code, postWrongStuff.body);
                 });
                 return next();

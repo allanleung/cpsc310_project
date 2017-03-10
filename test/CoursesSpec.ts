@@ -13,6 +13,63 @@ describe("CoursesSpec", () => {
         return insightFacade.addDataset('courses', content);
     });
 
+    it('should be able to sort', () => {
+        return insightFacade.performQuery({
+            "WHERE": {
+                "AND": [
+                    {"IS": {"courses_id": "317"}},
+                    {"IS": {"courses_dept": "biol"}}
+                ]
+            },
+            "OPTIONS": {
+                "COLUMNS": ["courses_id", "courses_avg", "courses_dept"],
+                "ORDER": {"dir": "DOWN", "keys": ["courses_avg"]},
+                "FORM": "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {"render":"TABLE","result":[{"courses_id":"317","courses_avg":72.73,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.73,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.5,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.5,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.83,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.83,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.78,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.78,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.57,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.57,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.35,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.35,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.1,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.1,"courses_dept":"biol"},{"courses_id":"317","courses_avg":65.24,"courses_dept":"biol"},{"courses_id":"317","courses_avg":65.24,"courses_dept":"biol"}]}
+        }))
+    });
+
+    it('should be able to sort', () => {
+        return insightFacade.performQuery({
+            "WHERE": {
+                "AND": [
+                    {"IS": {"courses_id": "317"}},
+                    {"IS": {"courses_dept": "biol"}}
+                ]
+            },
+            "OPTIONS": {
+                "COLUMNS": ["courses_id", "courses_avg", "courses_dept"],
+                "ORDER": {"dir": "UP", "keys": ["courses_avg"]},
+                "FORM": "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {"render":"TABLE","result":[{"courses_id":"317","courses_avg":65.24,"courses_dept":"biol"},{"courses_id":"317","courses_avg":65.24,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.1,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.1,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.35,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.35,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.57,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.57,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.78,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.78,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.83,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.83,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.5,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.5,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.73,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.73,"courses_dept":"biol"}]}
+        }))
+    });
+
+    it('should be able to sort', () => {
+        return insightFacade.performQuery({
+            "WHERE": {
+                "AND": [
+                    {"IS": {"courses_id": "317"}},
+                    {"IS": {"courses_dept": "biol"}}
+                ]
+            },
+            "OPTIONS": {
+                "COLUMNS": ["courses_id", "courses_avg", "courses_dept"],
+                "ORDER": "courses_avg",
+                "FORM": "TABLE"
+            }
+        }).then(response => expect(response).to.deep.eq({
+            code: 200,
+            body: {"render":"TABLE","result":[{"courses_id":"317","courses_avg":65.24,"courses_dept":"biol"},{"courses_id":"317","courses_avg":65.24,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.1,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.1,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.35,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.35,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.57,"courses_dept":"biol"},{"courses_id":"317","courses_avg":69.57,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.78,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.78,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.83,"courses_dept":"biol"},{"courses_id":"317","courses_avg":70.83,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.5,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.5,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.73,"courses_dept":"biol"},{"courses_id":"317","courses_avg":72.73,"courses_dept":"biol"}]}
+        }))
+    });
+
     it('should return the correct result for all courses', function () {
         this.timeout(50000000);
 
@@ -325,7 +382,8 @@ describe("CoursesSpec", () => {
         })
     });
 
-    it('should work correctly', () => {
+    it('should work correctly', function() {
+        this.timeout(10000);
         return insightFacade.performQuery({
             "WHERE": {
                 "AND": [

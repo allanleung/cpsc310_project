@@ -75,6 +75,9 @@ export function isQueryOptions(item: any): item is QueryOptions {
     if (!Array.isArray(item.COLUMNS))
         return false;
 
+    if (item.COLUMNS.length < 1)
+        return false;
+
     if (item.COLUMNS.some((entry: any) => typeof entry !== 'string'))
         return false;
 
@@ -141,7 +144,12 @@ export function isTransformations(item: any): item is Transformations {
     if (item.GROUP.some((key: any) => key.match(keyRegex) === null))
         return false;
 
-    return item.APPLY.every((value: any) => isApply(value));
+    if (item.APPLY.some((value: any) => !isApply(value)))
+        return false;
+
+    const applyKeys: string[] = item.APPLY.map((item: any) => Object.keys(item)[0]);
+
+    return (new Set(applyKeys)).size === applyKeys.length;
 }
 
 export interface Apply {
@@ -152,15 +160,16 @@ export function isApply(item: any): item is Apply {
     if (!isObject(item))
         return false;
 
-    if (isEmptyObject(item))
+    if (Object.keys(item).length !== 1)
         return false;
 
-    const applyKeys = Object.keys(item);
+    const token = Object.keys(item)[0];
+    const value = item[token];
 
-    if (applyKeys.some(key => key.indexOf('_') > -1))
+    if (token.indexOf('_') > -1)
         return false;
 
-    return applyKeys.map(key => item[key]).every(value => isApplyFunction(value));
+    return isApplyFunction(value);
 }
 
 export type ApplyFunction = ApplyMax | ApplyMin | ApplyAvg | ApplyCount | ApplySum;
