@@ -2,9 +2,11 @@ import {expect} from 'chai';
 import InsightFacade from "../src/controller/InsightFacade";
 import * as fs from 'fs';
 
+/*
 describe("CoursesSpec", () => {
     let insightFacade = new InsightFacade(false);
     const allCourses = JSON.parse(fs.readFileSync('test/allcourses.json').toString('utf8'));
+    const allInstructorsGrouped = JSON.parse(fs.readFileSync('test/allInstructorsGrouped.json').toString('utf8'));
 
     before(function() {
         this.timeout(10000);
@@ -16,13 +18,47 @@ describe("CoursesSpec", () => {
         this.timeout(50000000);
 
         return insightFacade.performQuery({
-            "WHERE": {}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id", "courses_avg", "courses_instructor", "courses_title", "courses_pass", "courses_fail", "courses_audit", "courses_uuid", "courses_year"], "ORDER": "courses_id", "FORM": "TABLE"}
+            "WHERE": {}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id", "courses_avg", "courses_instructor", "courses_title", "courses_pass", "courses_fail", "courses_audit", "courses_uuid", "courses_year"], "ORDER": {"keys": ["courses_id"], "dir": "UP"}, "FORM": "TABLE"}
         }).then(response => {
             expect(response.code).to.eq(200);
             expect(response.body.result.length).to.eq(allCourses.result.length);
 
             for (let idx = 0; idx < response.body.result.length; idx++) {
                 expect(response.body.result[idx]).to.deep.eq(allCourses.result[idx]);
+            }
+        })
+    });
+
+    it('should return the correct result for all courses', function () {
+        this.timeout(50000000);
+
+        return insightFacade.performQuery({
+            "WHERE": {},
+            "TRANSFORMATIONS": {
+                "GROUP": ["courses_instructor"],
+                "APPLY": [{
+                    "averageMark": {
+                        "AVG": "courses_avg"
+                    }
+                }]
+            },
+            "OPTIONS": {
+                "COLUMNS": [
+                    "courses_instructor",
+                    "averageMark"
+                ],
+                "ORDER": {
+                    "keys": ["averageMark", "courses_instructor"],
+                    "dir": "DOWN"
+                },
+                "FORM": "TABLE"
+            }
+        }).then(response => {
+            expect(response.code).to.eq(200);
+            expect(response.body.result.length).to.eq(allInstructorsGrouped.result.length);
+
+            for (let idx = 0; idx < response.body.result.length; idx++) {
+                expect(response.body.result[idx]).to.deep.eq(allInstructorsGrouped.result[idx]);
             }
         })
     });
@@ -5222,3 +5258,4 @@ describe("CoursesSpec", () => {
         });
     });
 });
+*/

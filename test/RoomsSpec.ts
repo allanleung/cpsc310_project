@@ -2,6 +2,7 @@ import InsightFacade from "../src/controller/InsightFacade";
 import {expect} from 'chai';
 import * as fs from 'fs';
 
+/*
 describe("RoomsSpec", () => {
     let insightFacade = new InsightFacade(false);
 
@@ -258,3 +259,4 @@ describe("RoomsSpec", () => {
         }))
     });
 });
+*/
