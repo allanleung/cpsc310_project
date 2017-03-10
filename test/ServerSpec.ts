@@ -41,13 +41,17 @@ describe("ServerSpec", function () {
     });
 
     it('Should successfully delete', () => {
+
+
         return chai.request("http://localhost:8000")
             .del('/dataset/rooms')
             .then(res => {
-                Log.trace('then: ' + res);
+                Log.trace('then: ' + JSON.stringify(res));
                 // some assertions
-            }, err => {
-                Log.trace('catch: ' + err);
+                expect(res).to.have.status(204);
+            })
+            .catch(err => {
+                Log.trace('catch: ' + JSON.stringify(err));
                 // some assertions
                 expect.fail();
             });

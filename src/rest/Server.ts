@@ -75,12 +75,12 @@ export default class Server {
             this.rest.del('/dataset/:id', (req, res, next) => {
                 let id = req.params.id;
                 this.inface.removeDataset(id).then (function (deleteStuff: InsightResponse) {
-                    res.json(deleteStuff.body);
+                    res.json(deleteStuff.code, deleteStuff.body);
                 }).catch(function (deleteWrongStuff: InsightResponse) {
-                    res.json(deleteWrongStuff.body);
+                    res.json(deleteWrongStuff.code, deleteWrongStuff.body);
 
                 });
-                return next;
+                return next();
             });
 
             this.rest.post('/query', (req, res, next) => {
@@ -90,7 +90,7 @@ export default class Server {
                 }).catch (function (postWrongStuff: InsightResponse) {
                     res.json(postWrongStuff.body);
                 });
-                return next;
+                return next();
             });
 
             this.rest.listen(this.port, () => {
