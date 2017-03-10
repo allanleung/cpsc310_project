@@ -4,6 +4,38 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should fail if keys is the wrong type', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_seats'
+                ],
+                ORDER: {
+                    dir: 'UP',
+                    keys: null
+                },
+                FORM: 'TABLE'
+            }
+        })).to.be.null
+    });
+
+    it('should fail if no order keys are provided', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_seats'
+                ],
+                ORDER: {
+                    dir: 'UP',
+                    keys: []
+                },
+                FORM: 'TABLE'
+            }
+        })).to.be.null
+    });
+
     it('should fail with a duplicate apply key', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},

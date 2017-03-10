@@ -106,6 +106,12 @@ export function isOrder(item: any, columns: string[]): boolean {
             return false;
         }
 
+        if (!Array.isArray(item.keys))
+            return false;
+
+        if (item.keys.length < 1)
+            return false;
+
         for (let key of item.keys) {
             if (columns.indexOf(key) < 0)
                 return false;
