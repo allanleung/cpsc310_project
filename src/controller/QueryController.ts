@@ -141,6 +141,8 @@ export default class QueryController {
                 newItem[column] = item[column];
 
             return newItem;
+        }).filter(item => {
+            return JSON.stringify(item) !== JSON.stringify({});
         })
     }
 
