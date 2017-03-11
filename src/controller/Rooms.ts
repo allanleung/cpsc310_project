@@ -81,7 +81,12 @@ export function parseBuilding(building: string): Promise<any[]> {
                 }
             ]);
 
+
+
             return createRoomEntry(fields, geoResponse, {rooms_shortname, rooms_fullname, rooms_address});
+        }).filter(entry => {
+            // TODO: Figure out why empty entries are added
+            return Object.keys(entry).indexOf('undefined') === -1;
         });
     });
 }
