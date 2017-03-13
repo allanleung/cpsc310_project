@@ -4,6 +4,159 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should fail if keys is the wrong type', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_seats'
+                ],
+                ORDER: {
+                    dir: 'UP',
+                    keys: null
+                },
+                FORM: 'TABLE'
+            }
+        })).to.be.null
+    });
+
+    it('should fail if no order keys are provided', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_seats'
+                ],
+                ORDER: {
+                    dir: 'UP',
+                    keys: []
+                },
+                FORM: 'TABLE'
+            }
+        })).to.be.null
+    });
+
+    it('should fail with a duplicate apply key', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'maxSeats'
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_address'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }, {
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.be.null
+    });
+
+    it('should determine the dataset when it is only mentioned in GROUP and APPLY', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'maxSeats'
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_address'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    'maxSeats'
+                ],
+                FORM: 'TABLE'
+            },
+            {
+                GROUP: [
+                    'rooms_address'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        ), 'rooms'))
+    });
+
+    it('should fail with an emply apply', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_address'
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_address'
+                ],
+                APPLY: [{
+                }]
+            }
+        })).to.be.null
+    });
+
+    it('should fail if an apply entry has more than one item', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'maxSeats',
+                    'minSeats'
+                ],
+                FORM: "TABLE"
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_address'
+                ],
+                APPLY: [{
+                    maxSeats: {
+                        MAX: 'rooms_seats'
+                    },
+                    minSeats: {
+                        MIN: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.be.null
+    });
+
+    it('should fail on an empty list of columns', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [],
+                FORM: "TABLE"
+            }
+        })).to.be.null
+    });
+
     it('should allow a D3 style order', ()=> {
         return expect(QueryParser.parseQuery({
             WHERE: {},
@@ -13,11 +166,26 @@ describe('QueryParser.parseQuery', () => {
                     "courses_avg"
                 ],
                 ORDER: {
-                    dir: "DOWN",
+                    keys: ["courses_avg"],
+                    dir: "DOWN"
 
-                }
+                },
+                FORM: "TABLE"
             }
-        }))
+        })).to.deep.eq(new ParsingResult(new Query(
+            {},
+            {
+                COLUMNS: [
+                    "courses_id",
+                    "courses_avg"
+                ],
+                ORDER: {
+                    keys: ["courses_avg"],
+                    dir: "DOWN"
+                },
+                FORM: "TABLE"
+            }
+        ), "courses"))
     });
 
     it('should fail if GROUPS is empty', () => {
