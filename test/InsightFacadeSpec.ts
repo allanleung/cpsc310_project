@@ -6,20 +6,7 @@
 import InsightFacade from "../src/controller/InsightFacade";
 import {expect} from "chai";
 import * as fs from "fs";
-import Log from "../src/Util";
 import DataController from "../src/controller/DataController";
-
-describe("Log", () => {
-    it('should not fail when logging', () => {
-        Log.trace('trace message');
-        Log.info('info message');
-        Log.warn('warn message');
-        Log.error('error message');
-        Log.test('test message');
-    });
-});
-
-// TODO Add tests for data entry validity
 
 describe("InsightFacade.addDataset", () => {
     let insightFacade: InsightFacade = null;

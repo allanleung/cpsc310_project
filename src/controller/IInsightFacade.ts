@@ -277,7 +277,7 @@ function createCoursesEntry(entry: any): any {
     if (!isStringOrNumber(entry.id))
         return null;
 
-    if (!isAcceptableNumber(entry.year) && (!isUndefined(entry.year) || entry.Section !== 'overall'))
+    if (!isAcceptableNumber(entry.Year) && (!isUndefined(entry.Year) || entry.Section !== 'overall'))
         return null;
 
     return {
@@ -290,7 +290,7 @@ function createCoursesEntry(entry: any): any {
         courses_fail: Number(entry.Fail),
         courses_audit: Number(entry.Audit),
         courses_uuid: String(entry.id),
-        courses_year: entry.Section === "overall" ? 1900 : Number(entry.year)
+        courses_year: entry.Section === "overall" ? 1900 : Number(entry.Year)
     }
 }
 
