@@ -85,10 +85,9 @@ export function parseBuilding(building: string): Promise<any[]> {
 
             return createRoomEntry(fields, geoResponse, {rooms_shortname, rooms_fullname, rooms_address});
         }).filter(entry => {
-            // TODO: Figure out why empty entries are added
-            return JSON.stringify(entry) !== JSON.stringify({});
-            // return Object.keys(entry).indexOf('undefined') === -1;
-                // && Object.values(entry).indexOf(undefined) === -1;
+            return Object.keys(entry)
+                .map(key => entry[key])
+                .every(value => value !== undefined)
         });
     });
 }
@@ -135,7 +134,7 @@ function getRoomEntries(buildingDocument: parse5.AST.Default.Document) : parse5.
     ]);
 }
 
-function createRoomEntry(fields: parse5.AST.Default.Element[], geoResponse: GeoResponseLatLon, rooms_info: PartialRoomsInfo) {
+function createRoomEntry(fields: parse5.AST.Default.Element[], geoResponse: GeoResponseLatLon, rooms_info: PartialRoomsInfo): any {
     const {rooms_shortname, rooms_fullname, rooms_address} = rooms_info;
 
     const rooms_number = (<parse5.AST.Default.TextNode>(<parse5.AST.Default.Element>fields[0].childNodes[1]).childNodes[0]).value.trim();

@@ -17,7 +17,7 @@ export default class InsightFacade implements IInsightFacade {
     public addDataset(id: string, content: string): Promise<InsightResponse> {
         return new Promise<InsightResponse>((resolve, reject) => {
             if (isUnknownDataset(id)) {
-                reject({
+                return reject({
                     code: 400,
                     body: {
                         error: "Don't know how to handle " + id + " dataset"
@@ -31,13 +31,13 @@ export default class InsightFacade implements IInsightFacade {
 
                     this.dataController.addDataset(id, allItems);
 
-                    resolve({
+                    return resolve({
                         code: statusCode,
                         body: {}
                     });
                 }))
                 .catch(() => {
-                    reject({
+                    return reject({
                         code: 400,
                         body: {
                             error: "Error loading zipfile"
@@ -50,7 +50,7 @@ export default class InsightFacade implements IInsightFacade {
     public removeDataset(id: string): Promise<InsightResponse> {
         return new Promise((fulfill, reject) => {
             if (!this.dataController.hasDataset(id)) {
-                reject({
+                return reject({
                     code: 404,
                     body: {
                         error: "Resource not found"
@@ -60,7 +60,7 @@ export default class InsightFacade implements IInsightFacade {
 
             this.dataController.removeDataset(id);
 
-            fulfill({
+            return fulfill({
                 code: 204,
                 body: {}
             });
@@ -72,7 +72,7 @@ export default class InsightFacade implements IInsightFacade {
             const parsingResult = QueryParser.parseQuery(query);
 
             if (parsingResult === null) {
-                reject({
+                return reject({
                     code: 400,
                     body: {
                         error: "Malformed query"
@@ -81,7 +81,7 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             if (this.queryController.isMissingDataset(parsingResult.dataset)) {
-                reject({
+                return reject({
                     code: 424,
                     body: {
                         missing: [parsingResult.dataset]
@@ -92,7 +92,7 @@ export default class InsightFacade implements IInsightFacade {
             const rendered = this.queryController.executeQuery(parsingResult.query);
 
             if (rendered === null) {
-                reject({
+                return reject({
                     code: 400,
                     body: {
                         error: "No datasets"
@@ -100,7 +100,7 @@ export default class InsightFacade implements IInsightFacade {
                 })
             }
 
-            fulfill({
+            return fulfill({
                 code: 200,
                 body: {
                     render: 'TABLE',
@@ -117,16 +117,5 @@ export default class InsightFacade implements IInsightFacade {
 
     private static processZipFile(id: string, zip: JSZip): Promise<any[]> {
         return dataSetDefinitions[id].processZip(zip)
-    }
-
-    /**
-     * Add a dataset directly, without going through the parsing process. Used for internal testing.
-     *
-     * @param id the id of the dataset
-     * @param entries the entries of the dataset
-     * @private
-     */
-    public _addDataset(id: string, entries: any[]) {
-        this.dataController.addDataset(id, entries);
     }
 }

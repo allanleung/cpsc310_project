@@ -239,7 +239,11 @@ function parseCoursesZip(zip: JSZip): Promise<any[]> {
         }));
     });
 
-    return Promise.all(files).then(flattenData);
+    return Promise.all(files).then(flattenData).then(data => data.filter(entry => {
+        return Object.keys(entry)
+            .map(key => entry[key])
+            .every(value => value !== undefined)
+    }));
 }
 
 function createCoursesEntry(entry: any): any {
