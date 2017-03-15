@@ -16,7 +16,7 @@ import Query, {
     Order
 } from "./Query";
 import DataController from "./DataController";
-import {isEmptyObject, filterObjectProperties} from "./IInsightFacade";
+import {filterObjectProperties} from "./IInsightFacade";
 import {isUndefined} from "util";
 /**
  * Created by jerome on 2017-02-10.
@@ -27,8 +27,8 @@ import {isUndefined} from "util";
 export default class QueryController {
     constructor(private readonly dataSet: DataController) {}
 
-    public executeQuery(query: Query): any[] {
-        const filteredItems = this.filterItems(query);
+    public executeQuery(query: Query, dataset: string): any[] {
+        const filteredItems = this.filterItems(query, dataset);
 
         let finalItems = filteredItems;
 
@@ -76,9 +76,10 @@ export default class QueryController {
         const results = [];
 
         for (let stringifiedGroupKey in itemGroups) {
-            const groupKey = JSON.parse(stringifiedGroupKey);
-
-            results.push(Object.assign(groupKey, this.applyAllTransformation(apply, itemGroups[stringifiedGroupKey])));
+            results.push({
+                ...JSON.parse(stringifiedGroupKey),
+                ...this.applyAllTransformation(apply, itemGroups[stringifiedGroupKey])
+            });
         }
 
         return results;
@@ -118,16 +119,9 @@ export default class QueryController {
         }
     }
 
-    private filterItems(query: Query): any[] {
-        const filteredItems: any[] = [];
-
-        this.dataSet.forEach(dataSet => {
-            filteredItems.push(...dataSet.filter(item => {
-                return isEmptyObject(query.WHERE) || QueryController.shouldIncludeItem(query.WHERE, item)
-            }));
-        });
-
-        return filteredItems;
+    private filterItems(query: Query, dataset: string): any[] {
+        return this.dataSet.getDataset(dataset)
+            .filter(item => QueryController.shouldIncludeItem(query.WHERE, item));
     }
 
     private static sortFilteredItems(filteredItems: any[], order: Order | string) {
@@ -157,7 +151,7 @@ export default class QueryController {
         return filteredItems.map(item => filterObjectProperties(item, columns))
     }
 
-    private static shouldIncludeItem(filter: Filter, item: any): boolean {
+    private static shouldIncludeItem(filter: Filter | {}, item: any): boolean {
         if (isOrFilter(filter)) {
             return this.processOrFilter(filter, item);
 
@@ -178,6 +172,8 @@ export default class QueryController {
 
         } else if (isIsFilter(filter)) {
             return this.processIsFilter(filter, item);
+        } else {
+            return true;
         }
     }
 

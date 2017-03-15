@@ -89,7 +89,7 @@ export default class InsightFacade implements IInsightFacade {
                 })
             }
 
-            const rendered = this.queryController.executeQuery(parsingResult.query);
+            const rendered = this.queryController.executeQuery(parsingResult.query, parsingResult.dataset);
 
             if (rendered === null) {
                 return reject({

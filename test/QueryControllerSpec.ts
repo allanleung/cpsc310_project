@@ -78,7 +78,7 @@ describe("QueryController.executeQuery", () => {
                 },
                 FORM: 'TABLE'
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_uuid: '39426', courses_avg: 71.18},
             {courses_uuid: '39427', courses_avg: 71.18},
             {courses_uuid: '39429', courses_avg: 90.5},
@@ -96,7 +96,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_id",
                 FORM: "TABLE"
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_id: "315"},
             {courses_id: "325"},
             {courses_id: "325"},
@@ -120,7 +120,7 @@ describe("QueryController.executeQuery", () => {
                 ],
                 APPLY: []
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_id: "315"},
             {courses_id: "325"},
             {courses_id: "385"}
@@ -148,7 +148,7 @@ describe("QueryController.executeQuery", () => {
                     }
                 }]
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_id: "315", totalPass: 71},
             {courses_id: "325", totalPass: 142},
             {courses_id: "385", totalPass: 71}
@@ -180,7 +180,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_id",
                 FORM: "TABLE"
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_dept: "asia", courses_id: "385", courses_avg: 90.5}
         ]);
     });
@@ -201,7 +201,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_dept: "asia", courses_id: "325", courses_avg: 71.18},
             {courses_dept: "asia", courses_id: "325", courses_avg: 71.18}
         ]);
@@ -222,7 +222,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_dept: "asia", courses_avg: 98.5}
         ]);
     });
@@ -242,7 +242,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_dept: "asia", courses_avg: 71.18},
             {courses_dept: "asia", courses_avg: 71.18}
         ]);
@@ -265,7 +265,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-        ))).to.deep.eq([
+        ), 'courses')).to.deep.eq([
             {courses_dept: "asia", courses_avg: 90.5},
             {courses_dept: "asia", courses_avg: 98.5}
         ]);
@@ -290,7 +290,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-            )
+            ), 'courses'
         )).to.deep.eq([
             {courses_dept: "asia", courses_avg: 71.18},
             {courses_dept: "asia", courses_avg: 71.18}
@@ -322,7 +322,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_id",
                 FORM: "TABLE",
             }
-            )
+            ), 'courses'
         )).to.deep.eq([
             {courses_dept: "asia", courses_avg: 98.5, courses_id: "315"},
             {courses_dept: "asia", courses_avg: 71.18, courses_id: "325"},
@@ -345,7 +345,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-            )
+            ), 'courses'
         )).to.deep.eq([
             {courses_dept: "asia", courses_avg: 71.18},
             {courses_dept: "asia", courses_avg: 71.18},
@@ -368,7 +368,7 @@ describe("QueryController.executeQuery", () => {
                     ORDER: "courses_avg",
                     FORM: "TABLE",
                 }
-            )
+            ), 'courses'
         )).to.deep.eq([
             {courses_dept: "asia", courses_avg: 71.18},
             {courses_dept: "asia", courses_avg: 71.18},
@@ -391,7 +391,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-            )
+            ), 'courses'
         )).to.deep.eq([
             {courses_dept: "asia", courses_avg: 71.18},
             {courses_dept: "asia", courses_avg: 71.18},
@@ -414,7 +414,7 @@ describe("QueryController.executeQuery", () => {
                 ORDER: "courses_avg",
                 FORM: "TABLE",
             }
-            )
+            ), 'courses'
         )).to.deep.eq([
             {courses_dept: "asia", courses_avg: 71.18},
             {courses_dept: "asia", courses_avg: 71.18},
