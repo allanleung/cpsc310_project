@@ -216,15 +216,17 @@ export function flattenData(data: any[][]): any[] {
     }, [])
 }
 
-export function filterObject(object: {[key: string]: any}, predicate: (key: string) => boolean): {[key: string]: any} {
-    const result: {[key: string]: any} = {};
+export function filterObjectProperties(
+    object: {[key: string]: any}, shouldIncludeKey: (key: string) => boolean): {[key: string]: any}
+{
+    const filteredObject: {[key: string]: any} = {};
 
     for (let key of Object.keys(object)) {
-        if (predicate(key))
-            result[key] = object[key]
+        if (shouldIncludeKey(key))
+            filteredObject[key] = object[key]
     }
 
-    return result
+    return filteredObject
 }
 
 function parseCoursesZip(zip: JSZip): Promise<any[]> {

@@ -16,7 +16,7 @@ import Query, {
     Order
 } from "./Query";
 import DataController from "./DataController";
-import {isEmptyObject, filterObject} from "./IInsightFacade";
+import {isEmptyObject, filterObjectProperties} from "./IInsightFacade";
 import {isUndefined} from "util";
 /**
  * Created by jerome on 2017-02-10.
@@ -44,58 +44,78 @@ export default class QueryController {
         return QueryController.renderItems(finalItems, query.OPTIONS.COLUMNS);
     }
 
+    public isMissingDataset(dataset: string): boolean {
+        return !this.dataSet.hasDataset(dataset);
+    }
+
     private static groupFilteredItems(items: any[], groups: string[], apply: Apply[]): any[] {
-        const categories: { [key: string]: any[] } = {};
+        const itemGroups = this.createItemGroups(items, groups);
+
+        return this.transformGroupedItems(itemGroups, apply);
+    }
+
+    private static createItemGroups(items: any[], groups: string[]): {[key: string]: any[]} {
+        const itemGroups: {[key: string]: any[]} = {};
 
         for (let item of items) {
-            const key = filterObject(item, key => groups.indexOf(key) > -1);
+            const groupKey = filterObjectProperties(item, key => groups.indexOf(key) > -1);
 
-            const groupKey = JSON.stringify(key);
+            const stringifiedGroupKey = JSON.stringify(groupKey);
 
-            if (isUndefined(categories[groupKey])) {
-                categories[groupKey] = [item]
+            if (isUndefined(itemGroups[stringifiedGroupKey])) {
+                itemGroups[stringifiedGroupKey] = [item]
             } else {
-                categories[groupKey].push(item)
+                itemGroups[stringifiedGroupKey].push(item)
             }
         }
 
+        return itemGroups;
+    }
+
+    private static transformGroupedItems(itemGroups: {[p: string]: any[]}, apply: Apply[]): any[] {
         const results = [];
 
-        for (let groupKey in categories) {
-            const key = JSON.parse(groupKey);
-            results.push(Object.assign(key, QueryController.generateApplyKeys(apply, categories[groupKey])));
+        for (let stringifiedGroupKey in itemGroups) {
+            const groupKey = JSON.parse(stringifiedGroupKey);
+
+            results.push(Object.assign(groupKey, this.applyAllTransformation(apply, itemGroups[stringifiedGroupKey])));
         }
 
         return results;
     }
 
-    private static generateApplyKeys(apply: Apply[], items: any[]): {[key: string]: number} {
+    private static applyAllTransformation(apply: Apply[], items: any[]): {[key: string]: number} {
         const applyResult: {[key: string]: number} = {};
 
         for (let applyItem of apply) {
-            const key = Object.keys(applyItem)[0];
-            const applyFunction = applyItem[key];
-
-            if (isApplyCount(applyFunction)) {
-                applyResult[key] = (new Set(items.map(item => item[applyFunction.COUNT])).size)
-            } else if (isApplyMax(applyFunction)) {
-                applyResult[key] = Math.max(...items.map(item => item[applyFunction.MAX]))
-            } else if (isApplyMin(applyFunction)) {
-                applyResult[key] = Math.min(...items.map(item => item[applyFunction.MIN]))
-            } else if (isApplySum(applyFunction)) {
-                applyResult[key] = items.map(item => item[applyFunction.SUM]).reduce((sum, item) => sum + item, 0)
-            } else if (isApplyAvg(applyFunction)) {
-                const modifiedSum = items.map(item => Number((item[applyFunction.AVG] * 10).toFixed(0)))
-                    .reduce((sum, item) => sum + item, 0);
-
-                applyResult[key] = Number(((modifiedSum / items.length) / 10).toFixed(2))
-            }
+            applyResult[Object.keys(applyItem)[0]] = this.applySingleTransformation(applyItem, items);
         }
+
         return applyResult;
     }
 
-    public isMissingDataset(dataset: string): boolean {
-        return !this.dataSet.hasDataset(dataset);
+    private static applySingleTransformation(applyItem: Apply, items: any[]): number {
+        const applyFunction = applyItem[Object.keys(applyItem)[0]];
+
+        if (isApplyCount(applyFunction)) {
+            return (new Set(items.map(item => item[applyFunction.COUNT])).size)
+
+        } else if (isApplyMax(applyFunction)) {
+            return Math.max(...items.map(item => item[applyFunction.MAX]))
+
+        } else if (isApplyMin(applyFunction)) {
+            return Math.min(...items.map(item => item[applyFunction.MIN]))
+
+        } else if (isApplySum(applyFunction)) {
+            return items.map(item => item[applyFunction.SUM]).reduce((sum, item) => sum + item, 0)
+
+        } else if (isApplyAvg(applyFunction)) {
+            const modifiedSum = items
+                .map(item => Number((item[applyFunction.AVG] * 10).toFixed(0)))
+                .reduce((sum, item) => sum + item, 0);
+
+            return Number(((modifiedSum / items.length) / 10).toFixed(2))
+        }
     }
 
     private filterItems(query: Query): any[] {
@@ -210,12 +230,15 @@ export default class QueryController {
         if (value.startsWith("*") && value.endsWith("*")) {
             const searchString = value.substr(1, value.length - 2);
             return item[key].indexOf(searchString) !== -1;
+
         } else if (value.startsWith("*")) {
             const searchString = value.substr(1);
             return item[key].endsWith(searchString);
+
         } else if (value.endsWith("*")) {
             const searchString = value.substr(0, value.length - 1);
             return item[key].startsWith(searchString);
+
         } else {
             return item[key] === value;
         }
