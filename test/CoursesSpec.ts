@@ -3,7 +3,7 @@ import InsightFacade from "../src/controller/InsightFacade";
 import * as fs from 'fs';
 
 describe("CoursesSpec", () => {
-    let insightFacade = new InsightFacade(false);
+    const insightFacade = new InsightFacade(false);
     const allCourses = JSON.parse(fs.readFileSync('test/allcourses.json').toString('utf8'));
     const allInstructorsGrouped = JSON.parse(fs.readFileSync('test/allInstructorsGrouped.json').toString('utf8'));
 
