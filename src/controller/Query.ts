@@ -1,4 +1,5 @@
 import {keyRegex, isEmptyObject, isObject} from "./IInsightFacade";
+
 /**
  * Created by jerome on 2017-02-11.
  *
@@ -18,12 +19,11 @@ export default class Query {
 
         const keys = Object.keys(item);
 
-        if (keys.length === 3) {
-            if (!isTransformations(item.TRANSFORMATIONS))
-                return false;
-        } else if (keys.length !== 2) {
+        if (keys.length !== 3 && keys.length !== 2)
             return false;
-        }
+
+        if (keys.length === 3 && !isTransformations(item.TRANSFORMATIONS))
+            return false;
 
         if (!isQueryOptions(item.OPTIONS))
             return false;
@@ -36,9 +36,13 @@ export default class Query {
     }
 
     public hasTransformations(): boolean {
-        return typeof this.TRANSFORMATIONS === 'object';
+        return isObject(this.TRANSFORMATIONS)
     }
 }
+
+export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
+
+export type Logic = Filter[];
 
 export interface QueryOptions {
     COLUMNS: string[];
@@ -51,84 +55,68 @@ export interface Order {
     keys: string[];
 }
 
-export function isQueryOptions(item: any): item is QueryOptions {
-    if (!isObject(item))
-        return false;
-
-    const keys = Object.keys(item);
-
-    if (keys.length !== 2) {
-        if (keys.length === 3) {
-            if (keys.indexOf('ORDER') === -1)
-                return false;
-        } else {
-            return false;
-        }
-    }
-
-    if (keys.indexOf('COLUMNS') === -1)
-        return false;
-
-    if (keys.indexOf('FORM') === -1)
-        return false;
-
-    if (!Array.isArray(item.COLUMNS))
-        return false;
-
-    if (item.COLUMNS.length < 1)
-        return false;
-
-    if (item.COLUMNS.some((entry: any) => typeof entry !== 'string'))
-        return false;
-
-    if (item.COLUMNS.some((entry: any) => entry.indexOf('_') > -1 && entry.match(keyRegex) === null))
-        return false;
-
-    if (keys.length === 3 && !isOrder(item.ORDER, item.COLUMNS))
-        return false;
-
-    return item.FORM === 'TABLE';
-}
-
-export function isOrder(item: any, columns: string[]): boolean {
-    if (typeof item === 'string') {
-        return columns.indexOf(item) >= 0;
-    } else if (isObject(item)) {
-        const keys = Object.keys(item);
-
-        if (keys.indexOf('dir') === -1)
-            return false;
-
-        if (keys.indexOf('keys') === -1)
-            return false;
-
-        if (keys.length !== 2) {
-            return false;
-        }
-
-        if (!Array.isArray(item.keys))
-            return false;
-
-        if (item.keys.length < 1)
-            return false;
-
-        for (let key of item.keys) {
-            if (columns.indexOf(key) < 0)
-                return false;
-        }
-
-        return item.dir === 'UP' || item.dir === 'DOWN';
-    } else {
-        return false;
-    }
-}
-
 export interface Transformations {
     GROUP: string[];
     APPLY: Apply[];
 }
 
-export function isTransformations(item: any): item is Transformations {
+export interface Apply {
+    [key: string]: ApplyFunction
+}
+
+export type ApplyFunction = ApplyMax | ApplyMin | ApplyAvg | ApplyCount | ApplySum;
+
+export type Comparator = {[key: string]: number};
+
+export interface IsFilter {
+    IS: {[key: string]: string;};
+}
+
+export interface LtFilter {
+    LT: Comparator;
+}
+
+export interface GtFilter {
+    GT: Comparator;
+}
+
+export interface EqFilter {
+    EQ: Comparator;
+}
+
+export interface AndFilter {
+    AND: Logic;
+}
+
+export interface OrFilter {
+    OR: Logic;
+}
+
+export interface NotFilter {
+    NOT: Filter;
+}
+
+export interface ApplyMax {
+    MAX: string
+}
+
+export interface ApplyMin {
+    MIN: string
+}
+
+export interface ApplyAvg {
+    AVG: string
+}
+
+export interface ApplyCount {
+    COUNT: string
+}
+
+export interface ApplySum {
+    SUM: string
+}
+
+function isTransformations(item: any): item is Transformations {
     if (!isObject(item))
         return false;
 
@@ -158,11 +146,85 @@ export function isTransformations(item: any): item is Transformations {
     return (new Set(applyKeys)).size === applyKeys.length;
 }
 
-export interface Apply {
-    [key: string]: ApplyFunction
+function isQueryOptions(item: any): item is QueryOptions {
+    if (!isObject(item))
+        return false;
+
+    const keys = Object.keys(item);
+
+    if (keys.length !== 2 && keys.length !== 3)
+        return false;
+
+    if (!Array.isArray(item.COLUMNS))
+        return false;
+
+    if (item.COLUMNS.length < 1)
+        return false;
+
+    if (item.COLUMNS.some((entry: any) => typeof entry !== 'string'))
+        return false;
+
+    if (item.COLUMNS.some((entry: any) => entry.indexOf('_') > -1 && entry.match(keyRegex) === null))
+        return false;
+
+    if (keys.length === 3 && !isOrder(item.ORDER, item.COLUMNS))
+        return false;
+
+    return item.FORM === 'TABLE';
 }
 
-export function isApply(item: any): item is Apply {
+export function isFilter(item: any): item is Filter {
+    if (!isObject(item))
+        return false;
+
+    if (Object.keys(item).length !== 1)
+        return false;
+
+    return isLtFilter(item) || isGtFilter(item) || isEqFilter(item)
+        || isAndFilter(item) || isOrFilter(item) || isNotFilter(item) || isIsFilter(item)
+}
+
+function isOrder(item: any, columns: string[]): boolean {
+    if (typeof item === 'string') {
+        return isOrderString(item, columns);
+    } else if (isObject(item)) {
+        return isOrderObject(item, columns);
+    } else {
+        return false;
+    }
+}
+
+function isOrderString(item: string, columns: string[]): boolean {
+    return columns.indexOf(item) >= 0;
+}
+
+function isOrderObject(item: any, columns: string[]): boolean {
+    const keys = Object.keys(item);
+
+    if (keys.indexOf('dir') === -1)
+        return false;
+
+    if (keys.indexOf('keys') === -1)
+        return false;
+
+    if (keys.length !== 2)
+        return false;
+
+    if (!Array.isArray(item.keys))
+        return false;
+
+    if (item.keys.length < 1)
+        return false;
+
+    for (let key of item.keys) {
+        if (columns.indexOf(key) < 0)
+            return false;
+    }
+
+    return item.dir === 'UP' || item.dir === 'DOWN';
+}
+
+function isApply(item: any): item is Apply {
     if (!isObject(item))
         return false;
 
@@ -176,28 +238,6 @@ export function isApply(item: any): item is Apply {
         return false;
 
     return isApplyFunction(value);
-}
-
-export type ApplyFunction = ApplyMax | ApplyMin | ApplyAvg | ApplyCount | ApplySum;
-
-export interface ApplyMax {
-    MAX: string
-}
-
-export interface ApplyMin {
-    MIN: string
-}
-
-export interface ApplyAvg {
-    AVG: string
-}
-
-export interface ApplyCount {
-    COUNT: string
-}
-
-export interface ApplySum {
-    SUM: string
 }
 
 export function isApplyFunction(item: any): item is ApplyFunction {
@@ -239,21 +279,6 @@ export function isApplySum(apply: ApplyFunction): apply is ApplySum {
     return isKey((<ApplySum>apply).SUM)
 }
 
-export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
-
-export function isFilter(item: any): item is Filter {
-    if (!isObject(item))
-        return false;
-
-    if (Object.keys(item).length !== 1)
-        return false;
-
-    return isLtFilter(item) || isGtFilter(item) || isEqFilter(item)
-        || isAndFilter(item) || isOrFilter(item) || isNotFilter(item) || isIsFilter(item)
-}
-
-export type Comparator = {[key: string]: number};
-
 export function isComparator(item: any): item is Comparator {
     if (!isObject(item))
         return false;
@@ -269,8 +294,6 @@ export function isComparator(item: any): item is Comparator {
     return typeof item[key] === 'number'
 }
 
-export type Logic = Filter[];
-
 export function isLogic(item: any): item is Logic {
     if (!Array.isArray(item))
         return false;
@@ -279,34 +302,6 @@ export function isLogic(item: any): item is Logic {
         return false;
 
     return item.every((item: any) => isFilter(item))
-}
-
-export interface IsFilter {
-    IS: {[key: string]: string;};
-}
-
-export interface LtFilter {
-    LT: Comparator;
-}
-
-export interface GtFilter {
-    GT: Comparator;
-}
-
-export interface EqFilter {
-    EQ: Comparator;
-}
-
-export interface AndFilter {
-    AND: Logic;
-}
-
-export interface OrFilter {
-    OR: Logic;
-}
-
-export interface NotFilter {
-    NOT: Filter;
 }
 
 function couldBeFilter(item: any): boolean {
