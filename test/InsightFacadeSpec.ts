@@ -19,7 +19,8 @@ describe("Log", () => {
     });
 });
 
-/*
+// TODO Add tests for data entry validity
+
 describe("InsightFacade.addDataset", () => {
     let insightFacade: InsightFacade = null;
     let courses: string;
@@ -329,4 +330,3 @@ describe("InsightFacade.performQuery", () => {
         })
     });
 });
-*/

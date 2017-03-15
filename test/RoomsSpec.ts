@@ -11,7 +11,6 @@ describe("RoomsSpec", () => {
         return insightFacade.addDataset('rooms', content);
     });
 
-    // TODO update this test once the new ORDER is implemented
     it('should perform D3 example query A correctly', () => {
         return insightFacade.performQuery({
             "WHERE": {

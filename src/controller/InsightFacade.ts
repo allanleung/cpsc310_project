@@ -118,4 +118,15 @@ export default class InsightFacade implements IInsightFacade {
     private static processZipFile(id: string, zip: JSZip): Promise<any[]> {
         return dataSetDefinitions[id].processZip(zip)
     }
+
+    /**
+     * Add a dataset directly, without going through the parsing process. Used for internal testing.
+     *
+     * @param id the id of the dataset
+     * @param entries the entries of the dataset
+     * @private
+     */
+    public _addDataset(id: string, entries: any[]) {
+        this.dataController.addDataset(id, entries);
+    }
 }
