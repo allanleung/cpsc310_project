@@ -55,7 +55,7 @@ describe("DatasetSpec", () => {
                     courses_fail: 0,
                     courses_audit: 0,
                     courses_uuid: "25216",
-                    courses_year: 2015
+                    courses_year: 1900
                 },{
                     courses_dept: "test",
                     courses_id: "417",
