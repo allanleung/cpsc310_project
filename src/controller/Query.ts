@@ -42,31 +42,16 @@ export default class Query {
 
 export type Filter = IsFilter | LtFilter | GtFilter | EqFilter | AndFilter | OrFilter | NotFilter;
 
-export type Logic = Filter[];
-
 export interface QueryOptions {
     COLUMNS: string[];
     ORDER?: Order | string;
     FORM: string;
 }
 
-export interface Order {
-    dir: string;
-    keys: string[];
-}
-
 export interface Transformations {
     GROUP: string[];
     APPLY: Apply[];
 }
-
-export interface Apply {
-    [key: string]: ApplyFunction
-}
-
-export type ApplyFunction = ApplyMax | ApplyMin | ApplyAvg | ApplyCount | ApplySum;
-
-export type Comparator = {[key: string]: number};
 
 export interface IsFilter {
     IS: {[key: string]: string;};
@@ -95,6 +80,21 @@ export interface OrFilter {
 export interface NotFilter {
     NOT: Filter;
 }
+
+export interface Order {
+    dir: string;
+    keys: string[];
+}
+
+export interface Apply {
+    [key: string]: ApplyFunction
+}
+
+export type Comparator = {[key: string]: number};
+
+export type Logic = Filter[];
+
+export type ApplyFunction = ApplyMax | ApplyMin | ApplyAvg | ApplyCount | ApplySum;
 
 export interface ApplyMax {
     MAX: string
@@ -173,7 +173,7 @@ function isQueryOptions(item: any): item is QueryOptions {
     return item.FORM === 'TABLE';
 }
 
-export function isFilter(item: any): item is Filter {
+function isFilter(item: any): item is Filter {
     if (!isObject(item))
         return false;
 
@@ -182,6 +182,34 @@ export function isFilter(item: any): item is Filter {
 
     return isLtFilter(item) || isGtFilter(item) || isEqFilter(item)
         || isAndFilter(item) || isOrFilter(item) || isNotFilter(item) || isIsFilter(item)
+}
+
+function isApply(item: any): item is Apply {
+    if (!isObject(item))
+        return false;
+
+    if (Object.keys(item).length !== 1)
+        return false;
+
+    const token = Object.keys(item)[0];
+    const value = item[token];
+
+    if (token.indexOf('_') > -1)
+        return false;
+
+    return isApplyFunction(value);
+}
+
+function isApplyFunction(item: any): item is ApplyFunction {
+    const apply = <ApplyFunction>item;
+
+    if (!isObject(item))
+        return false;
+
+    if (Object.keys(item).length !== 1)
+        return false;
+
+    return isApplyMax(apply) || isApplyMin(apply) || isApplyAvg(apply) || isApplyCount(apply) || isApplySum(apply)
 }
 
 function isOrder(item: any, columns: string[]): boolean {
@@ -224,41 +252,6 @@ function isOrderObject(item: any, columns: string[]): boolean {
     return item.dir === 'UP' || item.dir === 'DOWN';
 }
 
-function isApply(item: any): item is Apply {
-    if (!isObject(item))
-        return false;
-
-    if (Object.keys(item).length !== 1)
-        return false;
-
-    const token = Object.keys(item)[0];
-    const value = item[token];
-
-    if (token.indexOf('_') > -1)
-        return false;
-
-    return isApplyFunction(value);
-}
-
-export function isApplyFunction(item: any): item is ApplyFunction {
-    const apply = <ApplyFunction>item;
-
-    if (!isObject(item))
-        return false;
-
-    if (Object.keys(item).length !== 1)
-        return false;
-
-    return isApplyMax(apply) || isApplyMin(apply) || isApplyAvg(apply) || isApplyCount(apply) || isApplySum(apply)
-}
-
-function isKey(item: any): boolean {
-    if (typeof item !== 'string')
-        return false;
-
-    return item.match(keyRegex) !== null
-}
-
 export function isApplyMax(apply: ApplyFunction): apply is ApplyMax {
     return isKey((<ApplyMax>apply).MAX)
 }
@@ -277,38 +270,6 @@ export function isApplyCount(apply: ApplyFunction): apply is ApplyCount {
 
 export function isApplySum(apply: ApplyFunction): apply is ApplySum {
     return isKey((<ApplySum>apply).SUM)
-}
-
-export function isComparator(item: any): item is Comparator {
-    if (!isObject(item))
-        return false;
-
-    if (Object.keys(item).length !== 1)
-        return false;
-
-    const key = Object.keys(item)[0];
-
-    if (key.match(keyRegex) === null)
-        return false;
-
-    return typeof item[key] === 'number'
-}
-
-export function isLogic(item: any): item is Logic {
-    if (!Array.isArray(item))
-        return false;
-
-    if (item.length < 1)
-        return false;
-
-    return item.every((item: any) => isFilter(item))
-}
-
-function couldBeFilter(item: any): boolean {
-    if (!isObject(item))
-        return false;
-
-    return Object.keys(item).length === 1
 }
 
 export function isIsFilter(item: any): item is IsFilter {
@@ -371,4 +332,43 @@ export function isNotFilter(item: any): item is NotFilter {
         return false;
 
     return isFilter(item.NOT)
+}
+
+function isKey(item: any): boolean {
+    if (typeof item !== 'string')
+        return false;
+
+    return item.match(keyRegex) !== null
+}
+
+function couldBeFilter(item: any): boolean {
+    if (!isObject(item))
+        return false;
+
+    return Object.keys(item).length === 1
+}
+
+function isComparator(item: any): item is Comparator {
+    if (!isObject(item))
+        return false;
+
+    if (Object.keys(item).length !== 1)
+        return false;
+
+    const key = Object.keys(item)[0];
+
+    if (key.match(keyRegex) === null)
+        return false;
+
+    return typeof item[key] === 'number'
+}
+
+function isLogic(item: any): item is Logic {
+    if (!Array.isArray(item))
+        return false;
+
+    if (item.length < 1)
+        return false;
+
+    return item.every((item: any) => isFilter(item))
 }
