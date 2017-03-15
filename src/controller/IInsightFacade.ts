@@ -3,6 +3,7 @@
  * A class called InsightFacade, this should be in a file called InsightFacade.ts.
  * You should not change this interface at all or the test suite will not work.
  */
+import {isString} from "util";
 export const cachePath = __dirname + '/data.json';
 
 export const keyRegex = '^([A-Za-z0-9]+)_[A-Za-z0-9]+$';
@@ -14,6 +15,8 @@ import * as parse5 from 'parse5';
 import * as http from 'http';
 
 import {parseRoomsZip} from './Rooms';
+import {isNumber} from "util";
+import {isUndefined} from "util";
 
 export interface InsightResponse {
     code: number;
@@ -216,15 +219,14 @@ export function flattenData(data: any[][]): any[] {
     }, [])
 }
 
-export function filterObject(object: {[key: string]: any}, predicate: (key: string) => boolean): {[key: string]: any} {
-    const result: {[key: string]: any} = {};
+export function filterObjectProperties(object: {[key: string]: any}, keys: string[]): {[key: string]: any} {
+    const filteredObject: {[key: string]: any} = {};
 
-    for (let key of Object.keys(object)) {
-        if (predicate(key))
-            result[key] = object[key]
+    for (let key of keys) {
+        filteredObject[key] = object[key];
     }
 
-    return result
+    return filteredObject
 }
 
 function parseCoursesZip(zip: JSZip): Promise<any[]> {
@@ -236,26 +238,67 @@ function parseCoursesZip(zip: JSZip): Promise<any[]> {
         }
 
         files.push(file.async('string').then(data => {
-            return JSON.parse(data).result.map(createCoursesEntry);
+            return JSON.parse(data).result.map(createCoursesEntry).filter((item: any) => item !== null);
         }));
     });
 
-    return Promise.all(files).then(flattenData);
+    return Promise.all(files).then(flattenData)
 }
 
 function createCoursesEntry(entry: any): any {
+    if (!isString(entry.Subject))
+        return null;
+
+    if (!isStringOrNumber(entry.Course))
+        return null;
+
+    if (!isAcceptableNumber(entry.Avg))
+        return null;
+
+    if (!isString(entry.Professor))
+        return null;
+
+    if (!isString(entry.Title))
+        return null;
+
+    if (!isAcceptableNumber(entry.Pass))
+        return null;
+
+    if (!isAcceptableNumber(entry.Fail))
+        return null;
+
+    if (!isAcceptableNumber(entry.Audit))
+        return null;
+
+    if (!isStringOrNumber(entry.id))
+        return null;
+
+    if (!isAcceptableNumber(entry.Year) && (!isUndefined(entry.Year) || entry.Section !== 'overall'))
+        return null;
+
     return {
-        courses_dept: entry.Subject,
-        courses_id: entry.Course,
-        courses_avg: entry.Avg,
-        courses_instructor: entry.Professor,
-        courses_title: entry.Title,
-        courses_pass: entry.Pass,
-        courses_fail: entry.Fail,
-        courses_audit: entry.Audit,
-        courses_uuid: "" + entry.id,
-        courses_year: entry.Section == "overall" ? 1900 : parseInt(entry.Year)
+        courses_dept: String(entry.Subject),
+        courses_id: String(entry.Course),
+        courses_avg: Number(entry.Avg),
+        courses_instructor: String(entry.Professor),
+        courses_title: String(entry.Title),
+        courses_pass: Number(entry.Pass),
+        courses_fail: Number(entry.Fail),
+        courses_audit: Number(entry.Audit),
+        courses_uuid: String(entry.id),
+        courses_year: entry.Section === "overall" ? 1900 : Number(entry.Year)
     }
+}
+
+function isAcceptableNumber(item: any): boolean {
+    if (!isStringOrNumber(item))
+        return false;
+
+    return !isNaN(Number(item))
+}
+
+function isStringOrNumber(item: any): item is String | Number {
+    return isString(item) || isNumber(item)
 }
 
 function hasMatchingAttributes(element: parse5.AST.Default.Element, attributes: any[]): boolean {

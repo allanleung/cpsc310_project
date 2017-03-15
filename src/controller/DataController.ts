@@ -35,8 +35,8 @@ export default class DataController {
         }
     }
 
-    public forEach(callback: (value: any[], key: string) => void) {
-        this.dataSet.forEach(callback);
+    public getDataset(id: string): any[] {
+        return this.dataSet.get(id)
     }
 
     public addDataset(id: string, content: any[]) {

@@ -48,7 +48,6 @@ export default class Server {
      */
     public start(): Promise<boolean> {
         return new Promise((fulfill, reject) => {
-            Log.info('Server::start() - start');
 
             this.rest = restify.createServer({
                 name: 'insightUBC'
@@ -93,13 +92,11 @@ export default class Server {
             });
 
             this.rest.listen(this.port, () => {
-                Log.info('Server::start() - restify listening: ' + this.rest.url);
+                Log.info('Restify listening: ' + this.rest.url);
                 fulfill(true);
             });
 
             this.rest.on('error', err => {
-                // catches errors in restify start; unusual syntax due to internal node not using normal exceptions here
-                Log.info('Server::start() - restify ERROR: ' + err);
                 reject(err);
             });
         });

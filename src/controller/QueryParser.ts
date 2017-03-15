@@ -59,14 +59,20 @@ export default class QueryParser {
             if (query.hasTransformations() && !this.verifyTransformations(dataset, query.TRANSFORMATIONS))
                 return null;
 
-            const applyKeys = query.hasTransformations() ? this.extractApplyKeys(query.TRANSFORMATIONS) : [];
-
             // NOTE we might need to do part of this step anyways, even if we don't know dataset
-            if (!this.verifyOptions(query.OPTIONS, applyKeys, dataSetDefinitions[dataset].keys))
+            if (!this.verifyOptions(query.OPTIONS, this.getAcceptableColumns(query, dataset)))
                 return null;
         }
 
         return new ParsingResult(query, dataset);
+    }
+
+    private static getAcceptableColumns(query: Query, dataset: string): string[] {
+        if (query.hasTransformations()) {
+            return this.extractTransformationsKeys(query.TRANSFORMATIONS);
+        } else {
+            return Object.keys(dataSetDefinitions[dataset].keys);
+        }
     }
 
     private static extractAllDatasets(query: Query): string[] {
@@ -98,15 +104,12 @@ export default class QueryParser {
         return groupCorrect && applyCorrect;
     }
 
-    private static extractApplyKeys(transformations: Transformations): string[] {
-        return transformations.APPLY.map(entry => Object.keys(entry)[0])
+    private static extractTransformationsKeys(transformations: Transformations): string[] {
+        return [...transformations.APPLY.map(entry => Object.keys(entry)[0]), ...transformations.GROUP]
     }
 
-    private static verifyOptions(options: QueryOptions, applyKeys: string[], keySet: {[key: string]: string}): boolean {
-        // verify that all COLUMNS are either in the keyset or in the apply keys
-        const datasetKeys = Object.keys(keySet);
-
-        return options.COLUMNS.every(key => datasetKeys.indexOf(key) > -1 || applyKeys.indexOf(key) > -1)
+    private static verifyOptions(options: QueryOptions, keys: string[]): boolean {
+        return options.COLUMNS.every(key => keys.indexOf(key) > -1)
     }
 
     private static verifyGroup(group: string[], keySet: {[key: string]: string}): boolean {

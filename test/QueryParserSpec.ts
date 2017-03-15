@@ -4,6 +4,68 @@ import Query from "../src/controller/Query";
 import {ParsingResult} from "../src/controller/QueryParser";
 
 describe('QueryParser.parseQuery', () => {
+    it('should fail if a column is present that is not in GROUP or APPLY', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_shortname'
+                ],
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_seats'
+                ],
+                APPLY: []
+            }
+        })).to.be.null
+    });
+
+    it('should reject a column not defined in APPLY', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'variantone'
+                ],
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_name'
+                ],
+                APPLY: [{
+                    varianttwo: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.be.null
+    });
+
+    it('should fail if an APPLY key contains an underscore', () => {
+        return expect(QueryParser.parseQuery({
+            WHERE: {},
+            OPTIONS: {
+                COLUMNS: [
+                    'rooms_modified'
+                ],
+                FORM: 'TABLE'
+            },
+            TRANSFORMATIONS: {
+                GROUP: [
+                    'rooms_name'
+                ],
+                APPLY: [{
+                    rooms_modified: {
+                        MAX: 'rooms_seats'
+                    }
+                }]
+            }
+        })).to.be.null
+    });
+
     it('should fail if keys is the wrong type', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
