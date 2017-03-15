@@ -58,7 +58,7 @@ export default class QueryController {
         const itemGroups: {[key: string]: any[]} = {};
 
         for (let item of items) {
-            const groupKey = filterObjectProperties(item, key => groups.indexOf(key) > -1);
+            const groupKey = filterObjectProperties(item, groups);
 
             const stringifiedGroupKey = JSON.stringify(groupKey);
 
@@ -154,16 +154,7 @@ export default class QueryController {
     }
 
     private static renderItems(filteredItems: any[], columns: string[]): any[] {
-        return filteredItems.map(item => {
-            const newItem: any = {};
-
-            for (let column of columns)
-                newItem[column] = item[column];
-
-            return newItem;
-        }).filter(item => {
-            return JSON.stringify(item) !== JSON.stringify({});
-        })
+        return filteredItems.map(item => filterObjectProperties(item, columns))
     }
 
     private static shouldIncludeItem(filter: Filter, item: any): boolean {

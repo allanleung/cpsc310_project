@@ -216,14 +216,11 @@ export function flattenData(data: any[][]): any[] {
     }, [])
 }
 
-export function filterObjectProperties(
-    object: {[key: string]: any}, shouldIncludeKey: (key: string) => boolean): {[key: string]: any}
-{
+export function filterObjectProperties(object: {[key: string]: any}, keys: string[]): {[key: string]: any} {
     const filteredObject: {[key: string]: any} = {};
 
-    for (let key of Object.keys(object)) {
-        if (shouldIncludeKey(key))
-            filteredObject[key] = object[key]
+    for (let key of keys) {
+        filteredObject[key] = object[key];
     }
 
     return filteredObject
