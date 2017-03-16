@@ -9,6 +9,8 @@ import Log from "../Util";
 import InsightFacade from "../controller/InsightFacade";
 import {InsightResponse} from "../controller/IInsightFacade";
 
+import * as fs from 'fs';
+
 /**
  * This configures the REST endpoints for the server.
  */
@@ -22,6 +24,14 @@ export default class Server {
         Log.info("Server::<init>( " + port + " )");
         this.port = port;
         this.inface = new InsightFacade();
+    }
+
+    public register() {
+        const courses = fs.readFileSync(__dirname + '/../../test/courses.zip').toString('base64');
+        this.inface.addDataset('courses', courses);
+
+        const rooms = fs.readFileSync(__dirname + '/../../test/rooms.zip').toString('base64');
+        this.inface.addDataset('rooms', rooms);
     }
 
     /**
@@ -59,6 +69,31 @@ export default class Server {
                 res.send(405);
                 return next();
             });
+
+            this.rest.get(/\/public\/?.*/, restify.serveStatic({
+                directory: __dirname,
+                default: 'index.html'
+            }));
+
+            this.rest.get('/courses', restify.serveStatic({
+                directory: __dirname + '/views',
+                file: 'courses.html'
+            }));
+
+            this.rest.get('/rooms', restify.serveStatic({
+                directory: __dirname + '/views',
+                file: 'rooms.html'
+            }));
+
+            this.rest.get('/scheduling', restify.serveStatic({
+                directory: __dirname + '/views',
+                file: 'rooms.html'
+            }));
+
+            this.rest.get('/novel', restify.serveStatic({
+                directory: __dirname + '/views',
+                file: 'rooms.html'
+            }));
 
             this.rest.put('/dataset/:id', (req, res, next) => {
                 let dataStr = new Buffer(req.params.body).toString('base64');

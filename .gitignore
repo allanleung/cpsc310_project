@@ -10,3 +10,4 @@ node_modules/
 coverage/
 src/controller/data.json
 .nyc_output/
+!src/rest/public/app/**/*.js
