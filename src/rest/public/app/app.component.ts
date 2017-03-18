@@ -7,8 +7,7 @@ import { QueryService } from './query.service';
 <ul class="unstyled">
     <li *ngFor="let column of keys();">
         <label class="checkbox">
-         <!--[(ngModel)]="columns[column]"-->
-            <input type="checkbox">
+            <input [(ngModel)]="columns[column]" type="checkbox">
             <span>{{column}}</span>
         </label>
     </li>
@@ -19,21 +18,18 @@ import { QueryService } from './query.service';
 <table class="table table-hover">
     <thead>
         <tr>
-            <!--*ngIf="columns[column]-->
-            <th *ngFor="let column of keys();">{{column}}</th>
+            <th *ngFor="let column of visibleKeys();">{{column}}</th>
         </tr>
     </thead>
     <tbody>
         <tr *ngFor="let result of results;">
-        <!--*ngIf="columns[column]-->
-            <th *ngFor="let column of keys();">{{result[column]}}</th>
+            <th *ngFor="let column of visibleKeys();">{{result[column]}}</th>
         </tr>
     </tbody>
 </table>
 `
 })
 export class AppComponent {
-    name = "Test";
     columns: any;
     results: any[];
 
@@ -98,6 +94,12 @@ export class AppComponent {
 
     keys(): string[] {
         return Object.keys(this.columns);
+    }
+
+    visibleKeys(): string[] {
+        return Object.keys(this.columns).filter(item => {
+            return this.columns[item];
+        });
     }
 }
 
