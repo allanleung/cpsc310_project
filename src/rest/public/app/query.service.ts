@@ -13,7 +13,7 @@ export class QueryService {
 
     constructor(private http: Http) { }
 
-    search(query: any): Promise<any[]> {
+    search(query: any): Promise<any> {
         return this.http
             .post(this.queryEndpoint, query, this.headers)
             .toPromise()

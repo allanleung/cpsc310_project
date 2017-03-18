@@ -51,35 +51,10 @@ export class AppComponent {
             "courses_year": true
         };
 
-        this.results = [{
-            "courses_dept": false,
-            "courses_id": true,
-            "courses_avg": true,
-            "courses_instructor": true,
-            "courses_title": true,
-            "courses_pass": true,
-            "courses_fail": true,
-            "courses_audit": true,
-            "courses_uuid": true,
-            "courses_year": false
-        }];
+        this.results = [];
     }
 
     query(): void {
-        this.results = [{
-            "courses_dept": true,
-            "courses_id": true,
-            "courses_avg": true,
-            "courses_instructor": true,
-            "courses_title": true,
-            "courses_pass": true,
-            "courses_fail": true,
-            "courses_audit": true,
-            "courses_uuid": true,
-            "courses_year": true
-        }];
-
-
         this.queryService
             .search({
                 "WHERE": {
@@ -117,7 +92,7 @@ export class AppComponent {
                 }
             })
             .then(results => {
-                this.results = results;
+                this.results = results.result;
             });
     }
 

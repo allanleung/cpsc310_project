@@ -5,9 +5,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var core_1 = require("@angular/core");
-var AppComponent = (function () {
-    function AppComponent(queryService) {
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_1 = require("@angular/core");
+const query_service_1 = require("./query.service");
+let AppComponent = class AppComponent {
+    constructor(queryService) {
         this.queryService = queryService;
         this.name = "Test";
         this.columns = {
@@ -22,33 +27,9 @@ var AppComponent = (function () {
             "courses_uuid": true,
             "courses_year": true
         };
-        this.results = [{
-                "courses_dept": false,
-                "courses_id": true,
-                "courses_avg": true,
-                "courses_instructor": true,
-                "courses_title": true,
-                "courses_pass": true,
-                "courses_fail": true,
-                "courses_audit": true,
-                "courses_uuid": true,
-                "courses_year": false
-            }];
+        this.results = [];
     }
-    AppComponent.prototype.query = function () {
-        var _this = this;
-        this.results = [{
-                "courses_dept": true,
-                "courses_id": true,
-                "courses_avg": true,
-                "courses_instructor": true,
-                "courses_title": true,
-                "courses_pass": true,
-                "courses_fail": true,
-                "courses_audit": true,
-                "courses_uuid": true,
-                "courses_year": true
-            }];
+    query() {
         this.queryService
             .search({
             "WHERE": {
@@ -75,8 +56,8 @@ var AppComponent = (function () {
                 ]
             },
             "OPTIONS": {
-                "COLUMNS": Object.keys(this.columns).filter(function (e) {
-                    return _this.columns[e];
+                "COLUMNS": Object.keys(this.columns).filter(e => {
+                    return this.columns[e];
                 }),
                 "ORDER": {
                     "dir": "UP",
@@ -85,19 +66,47 @@ var AppComponent = (function () {
                 "FORM": "TABLE"
             }
         })
-            .then(function (results) {
-            _this.results = results;
+            .then(results => {
+            this.results = results.result;
         });
-    };
-    AppComponent.prototype.keys = function () {
+    }
+    keys() {
         return Object.keys(this.columns);
-    };
-    return AppComponent;
-}());
+    }
+};
 AppComponent = __decorate([
     core_1.Component({
         selector: 'my-app',
-        template: "\n<ul class=\"unstyled\">\n    <li *ngFor=\"let column of keys();\">\n        <label class=\"checkbox\">\n         <!--[(ngModel)]=\"columns[column]\"-->\n            <input type=\"checkbox\">\n            <span>{{column}}</span>\n        </label>\n    </li>\n</ul>\n\n<button (click)=\"query()\">Query</button>\n\n<table class=\"table table-hover\">\n    <thead>\n        <tr>\n            <!--*ngIf=\"columns[column]-->\n            <th *ngFor=\"let column of keys();\">{{column}}</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr *ngFor=\"let result of results;\">\n        <!--*ngIf=\"columns[column]-->\n            <th *ngFor=\"let column of keys();\">{{result[column]}}</th>\n        </tr>\n    </tbody>\n</table>\n"
-    })
+        template: `
+<ul class="unstyled">
+    <li *ngFor="let column of keys();">
+        <label class="checkbox">
+         <!--[(ngModel)]="columns[column]"-->
+            <input type="checkbox">
+            <span>{{column}}</span>
+        </label>
+    </li>
+</ul>
+
+<button (click)="query()">Query</button>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <!--*ngIf="columns[column]-->
+            <th *ngFor="let column of keys();">{{column}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let result of results;">
+        <!--*ngIf="columns[column]-->
+            <th *ngFor="let column of keys();">{{result[column]}}</th>
+        </tr>
+    </tbody>
+</table>
+`
+    }),
+    __metadata("design:paramtypes", [query_service_1.QueryService])
 ], AppComponent);
 exports.AppComponent = AppComponent;
+//# sourceMappingURL=app.component.js.map
