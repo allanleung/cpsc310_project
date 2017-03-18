@@ -1,14 +1,37 @@
 import { Component } from '@angular/core';
 import { QueryService } from './query.service';
 
+/**
+Course explorer (20%): provide a usable interface for interacting with the courses dataset. It should be possible to query sections by various properties:
+Section size
+Department
+Course number
+Instructor
+Title
+
+order by average, sections, passes, fails
+filterable by department, course number, course titles, and size thresholds.
+ */
+
 @Component({
     selector: 'my-app',
     template: `
+<h3>Select Columns</h3>
 <ul class="unstyled">
-    <li *ngFor="let column of keys();">
+    <li *ngFor="let column of columnsKeys();">
         <label class="checkbox">
             <input [(ngModel)]="columns[column]" type="checkbox">
             <span>{{column}}</span>
+        </label>
+    </li>
+</ul>
+
+<h3>Order By</h3>
+<ul class="unstyled">
+    <li *ngFor="let item of order.keys">
+        <label class="checkbox">
+            <input [(ngModel)]="item.value" type="checkbox" (change)="orderKeys()">
+            <span>{{item.name}}</span>
         </label>
     </li>
 </ul>
@@ -18,12 +41,12 @@ import { QueryService } from './query.service';
 <table class="table table-hover">
     <thead>
         <tr>
-            <th *ngFor="let column of visibleKeys();">{{column}}</th>
+            <th *ngFor="let column of columnsVisibleKeys();">{{column}}</th>
         </tr>
     </thead>
     <tbody>
         <tr *ngFor="let result of results;">
-            <th *ngFor="let column of visibleKeys();">{{result[column]}}</th>
+            <th *ngFor="let column of columnsVisibleKeys();">{{result[column]}}</th>
         </tr>
     </tbody>
 </table>
@@ -32,8 +55,31 @@ import { QueryService } from './query.service';
 export class AppComponent {
     columns: any;
     results: any[];
+    order: any;
 
     constructor (private queryService: QueryService) {
+        this.order = {
+            dir: "UP",
+            keys: [
+                { 
+                    name: "courses_avg",
+                    value: false
+                },
+                { 
+                    name: "?_section_size_?",
+                    value: false
+                },
+                { 
+                    name: "courses_pass",
+                    value: false
+                },
+                { 
+                    name: "courses_fail",
+                    value: false
+                }
+            ]
+        }
+
         this.columns = {
             "courses_dept": true,
             "courses_id": true,
@@ -82,7 +128,11 @@ export class AppComponent {
                     }),
                     "ORDER": {
                         "dir": "UP",
-                        "keys": ["courses_dept", "courses_id"]
+                        "keys": this.order.keys.filter((item: any) => {
+                            return item.value;
+                        }).map((item: any) => {
+                            return item.name;
+                        })
                     },
                     "FORM": "TABLE"
                 }
@@ -92,14 +142,22 @@ export class AppComponent {
             });
     }
 
-    keys(): string[] {
+    columnsKeys(): string[] {
         return Object.keys(this.columns);
     }
 
-    visibleKeys(): string[] {
+    columnsVisibleKeys(): string[] {
         return Object.keys(this.columns).filter(item => {
             return this.columns[item];
         });
+    }
+
+    orderKeys() {
+        this.order.keys = [...this.order.keys.filter((item: any) => {
+            return item.value;
+        }), ...this.order.keys.filter((item: any) => {
+            return !item.value;
+        })]
     }
 }
 
