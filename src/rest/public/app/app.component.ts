@@ -16,40 +16,54 @@ filterable by department, course number, course titles, and size thresholds.
 @Component({
     selector: 'my-app',
     template: `
-<h3>Select Columns</h3>
-<ul class="unstyled">
-    <li *ngFor="let column of columnsKeys();">
-        <label class="checkbox">
-            <input [(ngModel)]="columns[column]" type="checkbox">
-            <span>{{column}}</span>
-        </label>
-    </li>
-</ul>
+<div class="row">
+    <div class="col-md-4">
+        <h3>Select Columns</h3>
+        <ul class="unstyled">
+            <li *ngFor="let column of columns;">
+                <label class="checkbox">
+                    <input [(ngModel)]="column.value" type="checkbox">
+                    <span>{{column.name}}</span>
+                </label>
+            </li>
+        </ul>
+    </div>
 
-<h3>Order By</h3>
-<ul class="unstyled">
-    <li *ngFor="let item of order.keys">
-        <label class="checkbox">
-            <input [(ngModel)]="item.value" type="checkbox" (change)="orderKeys()">
-            <span>{{item.name}}</span>
-        </label>
-    </li>
-</ul>
+    <div class="col-md-4">
+        <h3>Order By</h3>
+        <ol class="unstyled">
+            <li *ngFor="let item of order.keys">
+                <label class="checkbox">
+                    <input [(ngModel)]="item.value" type="checkbox" (change)="orderKeys()">
+                    <span>{{item.name}}</span>
+                </label>
+            </li>
+        </ol>
+    </div>
 
-<button (click)="query()">Query</button>
+    <div class="col-md-4">
 
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th *ngFor="let column of columnsVisibleKeys();">{{column}}</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr *ngFor="let result of results;">
-            <th *ngFor="let column of columnsVisibleKeys();">{{result[column]}}</th>
-        </tr>
-    </tbody>
-</table>
+    </div>
+</div>
+
+<div class="row">
+    <button (click)="query()">Query</button>
+</div>
+
+<div class="row">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th *ngFor="let column of visibleColumns();">{{column}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let result of results;">
+                <th *ngFor="let column of visibleColumns();">{{result[column]}}</th>
+            </tr>
+        </tbody>
+    </table>
+</div>
 `
 })
 export class AppComponent {
@@ -80,18 +94,48 @@ export class AppComponent {
             ]
         }
 
-        this.columns = {
-            "courses_dept": true,
-            "courses_id": true,
-            "courses_avg": true,
-            "courses_instructor": true,
-            "courses_title": true,
-            "courses_pass": true,
-            "courses_fail": true,
-            "courses_audit": true,
-            "courses_uuid": true,
-            "courses_year": true
-        };
+        this.columns = [
+            {
+                name: "courses_dept",
+                value: true
+            },
+            {
+                name: "courses_id",
+                value: true
+            },
+            {
+                name: "courses_avg",
+                value: true
+            },
+            {
+                name: "courses_instructor",
+                value: true
+            },
+            {
+                name: "courses_title",
+                value: true
+            },
+            {
+                name: "courses_pass",
+                value: true
+            },
+            {
+                name: "courses_fail",
+                value: true
+            },
+            {
+                name: "courses_audit",
+                value: true
+            },
+            {
+                name: "courses_uuid",
+                value: true
+            },
+            {
+                name: "courses_year",
+                value: true
+            }
+        ];
 
         this.results = [];
     }
@@ -123,8 +167,10 @@ export class AppComponent {
                     ]
                 },
                 "OPTIONS": {
-                    "COLUMNS": Object.keys(this.columns).filter(e => {
-                        return this.columns[e];
+                    "COLUMNS": this.columns.filter((item: any) => {
+                        return item.value;
+                    }).map((item: any) => {
+                        return item.name;
                     }),
                     "ORDER": {
                         "dir": "UP",
@@ -135,20 +181,19 @@ export class AppComponent {
                         })
                     },
                     "FORM": "TABLE"
-                }
+                },
+                "TRANSFORMATIONS": {}
             })
             .then(results => {
                 this.results = results.result;
             });
     }
 
-    columnsKeys(): string[] {
-        return Object.keys(this.columns);
-    }
-
-    columnsVisibleKeys(): string[] {
-        return Object.keys(this.columns).filter(item => {
-            return this.columns[item];
+    visibleColumns(): string[] {
+        return this.columns.filter((item: any) => {
+            return item.value;
+        }).map((item: any) => {
+            return item.name;
         });
     }
 
@@ -157,7 +202,7 @@ export class AppComponent {
             return item.value;
         }), ...this.order.keys.filter((item: any) => {
             return !item.value;
-        })]
+        })];
     }
 }
 
