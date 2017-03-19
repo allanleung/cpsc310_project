@@ -65,34 +65,9 @@ export default class Server {
 
             this.rest.use(restify.bodyParser({mapParams: true, mapFiles: true}));
 
-            this.rest.get('/', (req, res, next) => {
-                res.send(405);
-                return next();
-            });
-
-            this.rest.get(/\/public\/?.*/, restify.serveStatic({
-                directory: __dirname,
+            this.rest.get(/\/((?!dataset)|(?!query)).*/, restify.serveStatic({
+                directory: __dirname + '/public',
                 default: 'index.html'
-            }));
-
-            this.rest.get('/courses', restify.serveStatic({
-                directory: __dirname + '/views',
-                file: 'courses.html'
-            }));
-
-            this.rest.get('/rooms', restify.serveStatic({
-                directory: __dirname + '/views',
-                file: 'rooms.html'
-            }));
-
-            this.rest.get('/scheduling', restify.serveStatic({
-                directory: __dirname + '/views',
-                file: 'rooms.html'
-            }));
-
-            this.rest.get('/novel', restify.serveStatic({
-                directory: __dirname + '/views',
-                file: 'rooms.html'
             }));
 
             this.rest.put('/dataset/:id', (req, res, next) => {
