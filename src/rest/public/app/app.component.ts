@@ -31,6 +31,11 @@ filterable by department, course number, course titles, and size thresholds.
 
     <div class="col-md-4">
         <h3>Order By</h3>
+        <select class="form-control" [(ngModel)]="order.dir">
+            <option>UP</option>
+            <option>DOWN</option>
+        </select>
+
         <ol class="unstyled">
             <li *ngFor="let item of order.keys">
                 <label class="checkbox">
@@ -42,12 +47,30 @@ filterable by department, course number, course titles, and size thresholds.
     </div>
 
     <div class="col-md-4">
+        <h3>Filters</h3>
+        <select class="form-control" [(ngModel)]="filterJunction">
+            <option>AND</option>
+            <option>OR</option>
+        </select>
 
+        <div *ngFor="let filter of filters;"class="form-group">
+            <label>{{filter.name}}</label>
+            <div class="row">
+                <div class="col-md-8">
+                    <input class="form-control" [(ngModel)]="filter.value">
+                </div>
+                <div class="col-md-4">
+                    <select class="form-control" [(ngModel)]="filter.comparator">
+                        <option *ngFor="let comparator of comparators(filter.type);">{{comparator}}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <button (click)="query()">Query</button>
+    <button type="button" class="btn btn-primary" (click)="query()">Query</button>
 </div>
 
 <div class="row">
@@ -68,8 +91,10 @@ filterable by department, course number, course titles, and size thresholds.
 })
 export class AppComponent {
     columns: any;
-    results: any[];
     order: any;
+    filterJunction: string;
+    filters: any[];
+    results: any[];
 
     constructor (private queryService: QueryService) {
         this.order = {
@@ -77,11 +102,7 @@ export class AppComponent {
             keys: [
                 { 
                     name: "courses_avg",
-                    value: false
-                },
-                { 
-                    name: "?_section_size_?",
-                    value: false
+                    value: true
                 },
                 { 
                     name: "courses_pass",
@@ -137,35 +158,78 @@ export class AppComponent {
             }
         ];
 
+        this.filterJunction = "AND";
+
+        this.filters = [
+            {
+                name: "courses_instructor",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "courses_title",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "courses_dept",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "courses_pass",
+                type: "number",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "courses_fail",
+                type: "number",
+                comparator: "",
+                value: ""
+            }
+        ]
+
+        // <option *ngFor> doesn't like to cooperate during the initial render
+        this.filters = this.filters.map((filter: any) => {
+            return {
+                name: filter.name,
+                type: filter.type,
+                comparator: this.comparators(filter.type)[0],
+                value: filter.value
+            }
+        });
+
         this.results = [];
     }
 
     query(): void {
+        let innerFilter: any = this.filters.filter((filter: any) => {
+            return filter.value.length !== 0;
+        }).map((filter: any) => {
+            let value: number | string = filter.value;
+            
+            if (filter.type === "number") {
+                value = parseFloat(filter.value);
+            }
+            
+            return {
+                [filter.comparator]: {
+                    [filter.name]: value
+                }
+            }
+        });
+
+        let innerWhere = innerFilter.length === 0 ? { } : {
+            [this.filterJunction]: innerFilter
+        };
+
         this.queryService
             .search({
-                "WHERE": {
-                    "OR":[
-                        {
-                            "AND":[
-                                {
-                                    "GT":{
-                                        "courses_avg":90
-                                    }
-                                },
-                                {
-                                    "IS":{
-                                        "courses_dept":"adhe"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "EQ":{
-                                "courses_avg":95
-                            }
-                        }
-                    ]
-                },
+                "WHERE": innerWhere,
                 "OPTIONS": {
                     "COLUMNS": this.columns.filter((item: any) => {
                         return item.value;
@@ -173,7 +237,7 @@ export class AppComponent {
                         return item.name;
                     }),
                     "ORDER": {
-                        "dir": "UP",
+                        "dir": this.order.dir,
                         "keys": this.order.keys.filter((item: any) => {
                             return item.value;
                         }).map((item: any) => {
@@ -181,8 +245,7 @@ export class AppComponent {
                         })
                     },
                     "FORM": "TABLE"
-                },
-                "TRANSFORMATIONS": {}
+                }
             })
             .then(results => {
                 this.results = results.result;
@@ -203,6 +266,10 @@ export class AppComponent {
         }), ...this.order.keys.filter((item: any) => {
             return !item.value;
         })];
+    }
+
+    comparators(type: string): string[] {
+        return type === "string" ? [ "IS" ] : [ "LT", "EQ", "GT" ]
     }
 }
 
