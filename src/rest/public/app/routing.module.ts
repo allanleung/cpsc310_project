@@ -4,15 +4,15 @@
 import { NgModule }             from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { AppComponent }   from './app.component';
+import { ModalComponent }   from './modal.component';
 import { CoursesComponent } from './courses.component';
 import { RoomsComponent }   from './rooms.component';
 
 const routes: Routes = [
-    // { path: '', redirectTo: '/courses', pathMatch: 'full' },
-    { path: '',  component: CoursesComponent },
+    { path: '', redirectTo: '/courses', pathMatch: 'full' },
     { path: 'courses',  component: CoursesComponent },
-    { path: 'rooms',  component: RoomsComponent }
+    { path: 'rooms',  component: RoomsComponent },
+    { path: 'error', component: ModalComponent, outlet: 'modal' }
 ];
 
 @NgModule({

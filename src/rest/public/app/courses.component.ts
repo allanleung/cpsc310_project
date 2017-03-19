@@ -1,5 +1,8 @@
-import { Component } from '@angular/core';
+import { Component }    from '@angular/core';
+
 import { QueryService } from './query.service';
+import { ModalService } from "./modal.service";
+import { ModalComponent } from './modal.component';
 
 @Component({
     selector: 'courses',
@@ -71,7 +74,7 @@ export class CoursesComponent {
     filters: any[];
     results: any[];
 
-    constructor (private queryService: QueryService) {
+    constructor (private queryService: QueryService, private modalService: ModalService) {
         this.order = {
             dir: "UP",
             keys: [
@@ -88,7 +91,7 @@ export class CoursesComponent {
                     value: false
                 }
             ]
-        }
+        };
 
         this.columns = [
             {
@@ -166,7 +169,7 @@ export class CoursesComponent {
                 comparator: "",
                 value: ""
             }
-        ]
+        ];
 
         // <option *ngFor> doesn't like to cooperate during the initial render
         this.filters = this.filters.map((filter: any) => {
@@ -224,6 +227,18 @@ export class CoursesComponent {
             })
             .then(results => {
                 this.results = results.result;
+
+                if (this.results.length === 0) {
+                    this.modalService.create(ModalComponent, {
+                        title: "Query",
+                        body: "No results found"
+                    });
+                }
+            }).catch(error => {
+                this.modalService.create(ModalComponent, {
+                    title: "Query Error",
+                    body: error._body
+                });
             });
     }
 

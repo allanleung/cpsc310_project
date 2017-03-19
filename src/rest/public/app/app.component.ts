@@ -27,6 +27,7 @@ import { Component } from '@angular/core';
 </nav>
 
 <router-outlet></router-outlet>
+<modal-placeholder></modal-placeholder>
 `
 })
 export class AppComponent {
