@@ -4,6 +4,7 @@ import { HttpModule }   from "@angular/http";
 import { FormsModule }  from "@angular/forms";
 
 import { AppComponent } from './app.component';
+import { ResultComponent } from './result.component';
 import { CoursesComponent } from './courses.component';
 import { RoomsComponent } from './rooms.component';
 import { QueryService } from "./query.service";
@@ -20,7 +21,8 @@ import { RoutingModule }    from './routing.module';
     declarations: [ 
         AppComponent,
         CoursesComponent,
-        RoomsComponent
+        RoomsComponent,
+        ResultComponent
     ],
     bootstrap: [
         AppComponent

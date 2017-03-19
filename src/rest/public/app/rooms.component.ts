@@ -61,20 +61,7 @@ import { QueryService } from './query.service';
     <button type="button" class="btn btn-primary" (click)="query()">Query</button>
 </div>
 
-<div class="row">
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th *ngFor="let column of visibleColumns();">{{column}}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let result of results;">
-                <th *ngFor="let column of visibleColumns();">{{result[column]}}</th>
-            </tr>
-        </tbody>
-    </table>
-</div>
+<query-results [columns]="columns" [results]="results"></query-results>
 `
 })
 export class RoomsComponent {
@@ -163,30 +150,6 @@ export class RoomsComponent {
                 comparator: "",
                 value: ""
             }
-            // {
-            //     name: "courses_title",
-            //     type: "string",
-            //     comparator: "",
-            //     value: ""
-            // },
-            // {
-            //     name: "courses_dept",
-            //     type: "string",
-            //     comparator: "",
-            //     value: ""
-            // },
-            // {
-            //     name: "courses_pass",
-            //     type: "number",
-            //     comparator: "",
-            //     value: ""
-            // },
-            // {
-            //     name: "courses_fail",
-            //     type: "number",
-            //     comparator: "",
-            //     value: ""
-            // }
         ];
 
         // <option *ngFor> doesn't like to cooperate during the initial render
@@ -246,14 +209,6 @@ export class RoomsComponent {
             .then(results => {
                 this.results = results.result;
             });
-    }
-
-    visibleColumns(): string[] {
-        return this.columns.filter((item: any) => {
-            return item.value;
-        }).map((item: any) => {
-            return item.name;
-        });
     }
 
     orderKeys() {
