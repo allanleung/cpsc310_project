@@ -89,59 +89,67 @@ export class RoomsComponent {
             dir: "UP",
             keys: [
                 { 
-                    name: "courses_avg",
+                    name: "rooms_lat",
                     value: true
                 },
                 { 
-                    name: "courses_pass",
-                    value: false
+                    name: "rooms_lon",
+                    value: true
                 },
-                { 
-                    name: "courses_fail",
+                {
+                    name: "rooms_seats",
+                    value: true
+                },
+                {
+                    name: "rooms_name",
                     value: false
                 }
             ]
-        }
+        };
 
         this.columns = [
             {
-                name: "courses_dept",
+                name: "rooms_fullname",
                 value: true
             },
             {
-                name: "courses_id",
+                name: "rooms_shortname",
                 value: true
             },
             {
-                name: "courses_avg",
+                name: "rooms_name",
                 value: true
             },
             {
-                name: "courses_instructor",
+                name: "rooms_number",
                 value: true
             },
             {
-                name: "courses_title",
+                name: "rooms_address",
                 value: true
             },
             {
-                name: "courses_pass",
+                name: "rooms_lat",
                 value: true
             },
             {
-                name: "courses_fail",
+                name: "rooms_lon",
                 value: true
             },
             {
-                name: "courses_audit",
+                name: "rooms_seats",
                 value: true
             },
             {
-                name: "courses_uuid",
+                name: "rooms_type",
                 value: true
             },
             {
-                name: "courses_year",
+                name: "rooms_furniture",
+                value: true
+            },
+            {
+                name: "rooms_href",
                 value: true
             }
         ];
@@ -150,36 +158,36 @@ export class RoomsComponent {
 
         this.filters = [
             {
-                name: "courses_instructor",
+                name: "rooms_name",
                 type: "string",
-                comparator: "",
-                value: ""
-            },
-            {
-                name: "courses_title",
-                type: "string",
-                comparator: "",
-                value: ""
-            },
-            {
-                name: "courses_dept",
-                type: "string",
-                comparator: "",
-                value: ""
-            },
-            {
-                name: "courses_pass",
-                type: "number",
-                comparator: "",
-                value: ""
-            },
-            {
-                name: "courses_fail",
-                type: "number",
                 comparator: "",
                 value: ""
             }
-        ]
+            // {
+            //     name: "courses_title",
+            //     type: "string",
+            //     comparator: "",
+            //     value: ""
+            // },
+            // {
+            //     name: "courses_dept",
+            //     type: "string",
+            //     comparator: "",
+            //     value: ""
+            // },
+            // {
+            //     name: "courses_pass",
+            //     type: "number",
+            //     comparator: "",
+            //     value: ""
+            // },
+            // {
+            //     name: "courses_fail",
+            //     type: "number",
+            //     comparator: "",
+            //     value: ""
+            // }
+        ];
 
         // <option *ngFor> doesn't like to cooperate during the initial render
         this.filters = this.filters.map((filter: any) => {
