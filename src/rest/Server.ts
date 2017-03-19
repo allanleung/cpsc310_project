@@ -65,11 +65,6 @@ export default class Server {
 
             this.rest.use(restify.bodyParser({mapParams: true, mapFiles: true}));
 
-            this.rest.get(/\/((?!dataset)|(?!query)).*/, restify.serveStatic({
-                directory: __dirname + '/public',
-                default: 'index.html'
-            }));
-
             this.rest.put('/dataset/:id', (req, res, next) => {
                 let dataStr = new Buffer(req.params.body).toString('base64');
                 let id = req.params.id;
@@ -100,6 +95,16 @@ export default class Server {
                 });
                 return next();
             });
+
+            this.rest.get(/^[^.]+$/, restify.serveStatic({
+                directory: __dirname + '/public',
+                file: 'index.html'
+            }));
+
+            this.rest.get(/\/.*/, restify.serveStatic({
+                directory: __dirname + '/public',
+                default: 'index.html'
+            }));
 
             this.rest.listen(this.port, () => {
                 Log.info('Restify listening: ' + this.rest.url);
