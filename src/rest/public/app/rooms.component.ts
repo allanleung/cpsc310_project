@@ -161,12 +161,6 @@ export class RoomsComponent {
                 value: ""
             },
             {
-                name: "rooms_name",
-                type: "string",
-                comparator: "",
-                value: ""
-            },
-            {
                 name: "rooms_seats",
                 type: "number",
                 comparator: "",
@@ -191,6 +185,10 @@ export class RoomsComponent {
                     let lat: number = parseFloat(self.value.split(',')[0]);
                     let lon: number = parseFloat(self.value.split(',')[1]);
                     let dist: number = parseFloat(self.value.split(',')[2])/1000;
+
+                    if (isNaN(lat) || isNaN(lon) || isNaN(dist)) {
+                        throw "Invalid query";
+                    }
 
                     let point = new GeoPoint(lat, lon, false);
                     let boundingBox = point.boundingCoordinates(dist, 0, true);
@@ -246,69 +244,26 @@ export class RoomsComponent {
     }
 
     query(): void {
-        let innerFilter: any;
+        let query: any;
         try {
-             innerFilter = this.filters.filter((filter: any) => {
-                return filter.value.length !== 0;
-            }).map((filter: any) => {
-                let value: number | string = filter.value;
-
-                if (filter.type === "number") {
-                    value = parseFloat(filter.value);
-                }
-
-                if (filter.template) {
-                    return filter.template(filter);
-                }
-
-                return {
-                    [filter.comparator]: {
-                        [filter.name]: value
-                    }
-                }
-            });
+            query = this.queryService.compose(this.filters, this.filterJunction, this.columns, this.order);
         } catch(error) {
-            if (this.results.length === 0) {
-                this.modalService.create(ModalComponent, {
-                    title: "Input Error",
-                    body: "Invalid location format"
-                });
-            }
+            this.modalService.create(ModalComponent, {
+                title: "Query Error",
+                body: "Invalid data format, query could not be composed"
+            });
 
             return;
         }
 
-
-        let innerWhere = innerFilter.length === 0 ? { } : {
-            [this.filterJunction]: innerFilter
-        };
-
         this.queryService
-            .search({
-                "WHERE": innerWhere,
-                "OPTIONS": {
-                    "COLUMNS": this.columns.filter((item: any) => {
-                        return item.value;
-                    }).map((item: any) => {
-                        return item.name;
-                    }),
-                    "ORDER": {
-                        "dir": this.order.dir,
-                        "keys": this.order.keys.filter((item: any) => {
-                            return item.value;
-                        }).map((item: any) => {
-                            return item.name;
-                        })
-                    },
-                    "FORM": "TABLE"
-                }
-            })
+            .search(query)
             .then(results => {
                 this.results = results.result;
 
                 if (this.results.length === 0) {
                     this.modalService.create(ModalComponent, {
-                        title: "Query",
+                        title: "Query Error",
                         body: "No results found"
                     });
                 }

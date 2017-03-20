@@ -13,6 +13,52 @@ export class QueryService {
 
     constructor(private http: Http) { }
 
+    compose(filters: any, filterJunction: string, columns: any[], order: any): any {
+        let innerFilter: any = filters.filter((filter: any) => {
+                return filter.value.length !== 0;
+            }).map((filter: any) => {
+                let value: number | string = filter.value;
+
+                if (filter.type === "number") {
+                    value = parseFloat(filter.value);
+                }
+
+                if (filter.template) {
+                    return filter.template(filter);
+                }
+
+                return {
+                    [filter.comparator]: {
+                        [filter.name]: value
+                    }
+                }
+            });
+
+        let innerWhere = innerFilter.length === 0 ? {} : {
+                [filterJunction]: innerFilter
+            };
+
+        return {
+            "WHERE": innerWhere,
+            "OPTIONS": {
+                "COLUMNS": columns.filter((item: any) => {
+                    return item.value;
+                }).map((item: any) => {
+                    return item.name;
+                }),
+                "ORDER": {
+                    "dir": order.dir,
+                    "keys": order.keys.filter((item: any) => {
+                        return item.value;
+                    }).map((item: any) => {
+                        return item.name;
+                    })
+                },
+                "FORM": "TABLE"
+            }
+        };
+    }
+
     search(query: any): Promise<any> {
         return this.http
             .post(this.queryEndpoint, query, this.headers)
