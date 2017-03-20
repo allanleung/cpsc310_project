@@ -185,53 +185,27 @@ export class CoursesComponent {
     }
 
     query(): void {
-        let innerFilter: any = this.filters.filter((filter: any) => {
-            return filter.value.length !== 0;
-        }).map((filter: any) => {
-            let value: number | string = filter.value;
-            
-            if (filter.type === "number") {
-                value = parseFloat(filter.value);
-            }
-            
-            return {
-                [filter.comparator]: {
-                    [filter.name]: value
-                }
-            }
-        });
+        let query: any;
+        try {
+            query = this.queryService.compose(this.filters, this.filterJunction, this.columns, this.order);
+        } catch(error) {
+            this.modalService.create(ModalComponent, {
+                title: "Query Error",
+                body: "Invalid data format, query could not be composed"
+            });
 
-        let innerWhere = innerFilter.length === 0 ? { } : {
-            [this.filterJunction]: innerFilter
-        };
+            return;
+        }
 
         this.queryService
-            .search({
-                "WHERE": innerWhere,
-                "OPTIONS": {
-                    "COLUMNS": this.columns.filter((item: any) => {
-                        return item.value;
-                    }).map((item: any) => {
-                        return item.name;
-                    }),
-                    "ORDER": {
-                        "dir": this.order.dir,
-                        "keys": this.order.keys.filter((item: any) => {
-                            return item.value;
-                        }).map((item: any) => {
-                            return item.name;
-                        })
-                    },
-                    "FORM": "TABLE"
-                }
-            })
+            .search(query)
             .then(results => {
                 this.results = results.result;
 
                 if (this.results.length === 0) {
                     this.modalService.create(ModalComponent, {
                         title: "Query",
-                        body: "No results found"
+                        body: "No rooms_results found"
                     });
                 }
             }).catch(error => {

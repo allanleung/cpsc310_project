@@ -7,12 +7,13 @@ import { RouterModule, Routes } from '@angular/router';
 import { ModalComponent }   from './modal/modal.component';
 import { CoursesComponent } from './courses.component';
 import { RoomsComponent }   from './rooms.component';
+import { ScheduleComponent }   from './schedule.component';
 
 const routes: Routes = [
     { path: '', redirectTo: '/courses', pathMatch: 'full' },
     { path: 'courses',  component: CoursesComponent },
     { path: 'rooms',  component: RoomsComponent },
-    { path: 'error', component: ModalComponent, outlet: 'modal' }
+    { path: 'schedule', component: ScheduleComponent }
 ];
 
 @NgModule({

@@ -8,11 +8,13 @@ import { ModalComponent } from './modal/modal.component';
 import { ResultComponent } from './result.component';
 import { CoursesComponent } from './courses.component';
 import { RoomsComponent } from './rooms.component';
+import { ScheduleComponent } from './schedule.component';
+
 import { QueryService } from "./query.service";
 
 import { RoutingModule }    from './routing.module';
-import {ModalService} from "./modal/modal.service";
-import {ModalPlaceholderComponent} from "./modal/modal-placeholder.component";
+import { ModalService} from "./modal/modal.service";
+import { ModalPlaceholderComponent } from "./modal/modal-placeholder.component";
 
 @NgModule({
     imports:      [
@@ -27,7 +29,8 @@ import {ModalPlaceholderComponent} from "./modal/modal-placeholder.component";
         ModalComponent,
         ResultComponent,
         CoursesComponent,
-        RoomsComponent
+        RoomsComponent,
+        ScheduleComponent
     ],
     bootstrap: [
         AppComponent
