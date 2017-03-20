@@ -13,7 +13,7 @@ import { Component } from '@angular/core';
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">insight UBC</a>
+      <a class="navbar-brand" href="#">insightUBC</a>
     </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->
@@ -26,7 +26,10 @@ import { Component } from '@angular/core';
   </div>
 </nav>
 
+<!-- Outlet for default router components -->
 <router-outlet></router-outlet>
+
+<!-- Placeholder for modal views -->
 <modal-placeholder></modal-placeholder>
 `
 })

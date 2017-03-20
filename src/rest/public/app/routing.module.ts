@@ -4,7 +4,7 @@
 import { NgModule }             from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { ModalComponent }   from './modal.component';
+import { ModalComponent }   from './modal/modal.component';
 import { CoursesComponent } from './courses.component';
 import { RoomsComponent }   from './rooms.component';
 

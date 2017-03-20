@@ -1,8 +1,8 @@
 import { Component }    from '@angular/core';
 
 import { QueryService } from './query.service';
-import { ModalService } from "./modal.service";
-import { ModalComponent } from './modal.component';
+import { ModalService } from "./modal/modal.service";
+import { ModalComponent } from './modal/modal.component';
 
 @Component({
     selector: 'courses',

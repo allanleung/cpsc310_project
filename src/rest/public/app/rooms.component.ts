@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 
 import { QueryService } from './query.service';
-import { ModalService } from "./modal.service";
-import { ModalComponent } from "./modal.component";
+import { ModalService } from "./modal/modal.service";
+import { ModalComponent } from "./modal/modal.component";
+import { GeoPoint } from "./GeoPoint";
 
 @Component({
     selector: 'rooms',
@@ -148,10 +149,85 @@ export class RoomsComponent {
 
         this.filters = [
             {
+                name: "rooms_fullname",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "rooms_shortname",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
                 name: "rooms_name",
                 type: "string",
                 comparator: "",
                 value: ""
+            },
+            {
+                name: "rooms_seats",
+                type: "number",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "rooms_furniture",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "location_distance (lat,lon,dist)",
+                type: "location",
+                comparator: "",
+                value: "",
+                template: (self: any) => {
+                    if (self.value.split(',').length !== 3) {
+                        throw "Invalid query";
+                    }
+
+                    let lat: number = parseFloat(self.value.split(',')[0]);
+                    let lon: number = parseFloat(self.value.split(',')[1]);
+                    let dist: number = parseFloat(self.value.split(',')[2])/1000;
+
+                    let point = new GeoPoint(lat, lon, false);
+                    let boundingBox = point.boundingCoordinates(dist, 0, true);
+
+                    let boxQuery: any = {
+                        "AND": [
+                            {
+                                "GT": {
+                                    "rooms_lat": boundingBox[0].degLat
+                                }
+                            },
+                            {
+                                "LT": {
+                                    "rooms_lat": boundingBox[1].degLat
+                                }
+                            },
+                            {
+                                "LT": {
+                                    "rooms_lon": boundingBox[1].degLon
+                                }
+                            },
+                            {
+                                "GT": {
+                                    "rooms_lon": boundingBox[0].degLon
+                                }
+                            }
+                        ]
+                    };
+
+                    if (self.comparator === "OUT") {
+                        boxQuery = {
+                            "NOT": boxQuery
+                        }
+                    }
+
+                    return boxQuery;
+                }
             }
         ];
 
@@ -161,7 +237,8 @@ export class RoomsComponent {
                 name: filter.name,
                 type: filter.type,
                 comparator: this.comparators(filter.type)[0],
-                value: filter.value
+                value: filter.value,
+                template: filter.template
             }
         });
 
@@ -169,21 +246,38 @@ export class RoomsComponent {
     }
 
     query(): void {
-        let innerFilter: any = this.filters.filter((filter: any) => {
-            return filter.value.length !== 0;
-        }).map((filter: any) => {
-            let value: number | string = filter.value;
-            
-            if (filter.type === "number") {
-                value = parseFloat(filter.value);
-            }
-            
-            return {
-                [filter.comparator]: {
-                    [filter.name]: value
+        let innerFilter: any;
+        try {
+             innerFilter = this.filters.filter((filter: any) => {
+                return filter.value.length !== 0;
+            }).map((filter: any) => {
+                let value: number | string = filter.value;
+
+                if (filter.type === "number") {
+                    value = parseFloat(filter.value);
                 }
+
+                if (filter.template) {
+                    return filter.template(filter);
+                }
+
+                return {
+                    [filter.comparator]: {
+                        [filter.name]: value
+                    }
+                }
+            });
+        } catch(error) {
+            if (this.results.length === 0) {
+                this.modalService.create(ModalComponent, {
+                    title: "Input Error",
+                    body: "Invalid location format"
+                });
             }
-        });
+
+            return;
+        }
+
 
         let innerWhere = innerFilter.length === 0 ? { } : {
             [this.filterJunction]: innerFilter
@@ -236,7 +330,7 @@ export class RoomsComponent {
     }
 
     comparators(type: string): string[] {
-        return type === "string" ? [ "IS" ] : [ "LT", "EQ", "GT" ]
+        return type === "string" ? [ "IS" ] : type === "number" ? [ "LT", "EQ", "GT" ] : [ "IN", "OUT" ]
     }
 }
 
