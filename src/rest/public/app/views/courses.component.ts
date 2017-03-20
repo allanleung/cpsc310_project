@@ -1,8 +1,8 @@
 import { Component }    from '@angular/core';
 
-import { QueryService } from './query.service';
-import { ModalService } from "./modal/modal.service";
-import { ModalComponent } from './modal/modal.component';
+import { QueryService } from '../query.service';
+import { ModalService } from "../modal/modal.service";
+import { ModalComponent } from '../modal/modal.component';
 
 @Component({
     selector: 'courses',
@@ -10,53 +10,17 @@ import { ModalComponent } from './modal/modal.component';
 <div class="row">
     <div class="col-md-4">
         <h3>Select Columns</h3>
-        <ul class="unstyled">
-            <li *ngFor="let column of columns;">
-                <label class="checkbox">
-                    <input [(ngModel)]="column.value" type="checkbox">
-                    <span>{{column.name}}</span>
-                </label>
-            </li>
-        </ul>
+        <column-selector [columns]="columns"></column-selector>
     </div>
 
     <div class="col-md-4">
         <h3>Order By</h3>
-        <select class="form-control" [(ngModel)]="order.dir">
-            <option>UP</option>
-            <option>DOWN</option>
-        </select>
-
-        <ol class="unstyled">
-            <li *ngFor="let item of order.keys">
-                <label class="checkbox">
-                    <input [(ngModel)]="item.value" type="checkbox" (change)="orderKeys()">
-                    <span>{{item.name}}</span>
-                </label>
-            </li>
-        </ol>
+        <order-selector [order]="order"></order-selector>
     </div>
 
     <div class="col-md-4">
         <h3>Filters</h3>
-        <select class="form-control" [(ngModel)]="filterJunction">
-            <option>AND</option>
-            <option>OR</option>
-        </select>
-
-        <div *ngFor="let filter of filters;"class="form-group">
-            <label>{{filter.name}}</label>
-            <div class="row">
-                <div class="col-md-8">
-                    <input class="form-control" [(ngModel)]="filter.value">
-                </div>
-                <div class="col-md-4">
-                    <select class="form-control" [(ngModel)]="filter.comparator">
-                        <option *ngFor="let comparator of comparators(filter.type);">{{comparator}}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+        <filter-selector [filterJunction]="filterJunction" [filters]="filters"></filter-selector>
     </div>
 </div>
 
@@ -68,7 +32,7 @@ import { ModalComponent } from './modal/modal.component';
 `
 })
 export class CoursesComponent {
-    columns: any;
+    columns: any[];
     order: any;
     filterJunction: string;
     filters: any[];
@@ -96,7 +60,7 @@ export class CoursesComponent {
         this.columns = [
             {
                 name: "courses_dept",
-                value: true
+                value: false
             },
             {
                 name: "courses_id",
@@ -171,20 +135,15 @@ export class CoursesComponent {
             }
         ];
 
-        // <option *ngFor> doesn't like to cooperate during the initial render
-        this.filters = this.filters.map((filter: any) => {
-            return {
-                name: filter.name,
-                type: filter.type,
-                comparator: this.comparators(filter.type)[0],
-                value: filter.value
-            }
-        });
-
         this.results = [];
     }
 
     query(): void {
+        this.modalService.create(ModalComponent, {
+            title: "TEST",
+            body: "This is a test"
+        });
+
         let query: any;
         try {
             query = this.queryService.compose(this.filters, this.filterJunction, this.columns, this.order);
@@ -205,7 +164,7 @@ export class CoursesComponent {
                 if (this.results.length === 0) {
                     this.modalService.create(ModalComponent, {
                         title: "Query",
-                        body: "No rooms_results found"
+                        body: "No results found"
                     });
                 }
             }).catch(error => {
@@ -214,18 +173,6 @@ export class CoursesComponent {
                     body: error._body
                 });
             });
-    }
-
-    orderKeys() {
-        this.order.keys = [...this.order.keys.filter((item: any) => {
-            return item.value;
-        }), ...this.order.keys.filter((item: any) => {
-            return !item.value;
-        })];
-    }
-
-    comparators(type: string): string[] {
-        return type === "string" ? [ "IS" ] : [ "LT", "EQ", "GT" ]
     }
 }
 

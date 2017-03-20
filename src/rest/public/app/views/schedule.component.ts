@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 
-import { QueryService } from './query.service';
-import { ModalService } from "./modal/modal.service";
-import { ModalComponent } from "./modal/modal.component";
-import { GeoPoint } from "./GeoPoint";
+import { QueryService } from '../query.service';
+import { ModalService } from "../modal/modal.service";
+import { ModalComponent } from "../modal/modal.component";
+import { GeoPoint } from "../models/GeoPoint";
 
 @Component({
     selector: 'schedule',
@@ -13,82 +13,24 @@ import { GeoPoint } from "./GeoPoint";
 
     <div class="col-md-3">
         <h3>Rooms Order By</h3>
-        <select class="form-control" [(ngModel)]="rooms_order.dir">
-            <option>UP</option>
-            <option>DOWN</option>
-        </select>
-
-        <ol class="unstyled">
-            <li *ngFor="let item of rooms_order.keys">
-                <label class="checkbox">
-                    <input [(ngModel)]="item.value" type="checkbox" (change)="orderKeysRoom()">
-                    <span>{{item.name}}</span>
-                </label>
-            </li>
-        </ol>
+        <order-selector [order]="rooms_order"></order-selector>
     </div>
 
     <div class="col-md-3">
         <h3>Rooms Filters</h3>
-        <select class="form-control" [(ngModel)]="rooms_filterJunction">
-            <option>AND</option>
-            <option>OR</option>
-        </select>
-
-        <div *ngFor="let filter of rooms_filters;"class="form-group">
-            <label>{{filter.name}}</label>
-            <div class="row">
-                <div class="col-md-8">
-                    <input class="form-control" [(ngModel)]="filter.value">
-                </div>
-                <div class="col-md-4">
-                    <select class="form-control" [(ngModel)]="filter.comparator">
-                        <option *ngFor="let comparator of comparators(filter.type);">{{comparator}}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+        <filter-selector [filterJunction]="rooms_filterJunction" [filters]="rooms_filters"></filter-selector>
     </div>
     
     <!-- Courses -->
     
     <div class="col-md-3">
         <h3>Courses Order By</h3>
-        <select class="form-control" [(ngModel)]="courses_order.dir">
-            <option>UP</option>
-            <option>DOWN</option>
-        </select>
-
-        <ol class="unstyled">
-            <li *ngFor="let item of courses_order.keys">
-                <label class="checkbox">
-                    <input [(ngModel)]="item.value" type="checkbox" (change)="orderKeysCourses()">
-                    <span>{{item.name}}</span>
-                </label>
-            </li>
-        </ol>
+        <order-selector [order]="courses_order"></order-selector>
     </div>
 
     <div class="col-md-3">
         <h3>Courses Filters</h3>
-        <select class="form-control" [(ngModel)]="courses_filterJunction">
-            <option>AND</option>
-            <option>OR</option>
-        </select>
-
-        <div *ngFor="let filter of courses_filters;"class="form-group">
-            <label>{{filter.name}}</label>
-            <div class="row">
-                <div class="col-md-8">
-                    <input class="form-control" [(ngModel)]="filter.value">
-                </div>
-                <div class="col-md-4">
-                    <select class="form-control" [(ngModel)]="filter.comparator">
-                        <option *ngFor="let comparator of comparators(filter.type);">{{comparator}}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+        <filter-selector [filterJunction]="courses_filterJunction" [filters]="courses_filters"></filter-selector>
     </div>
 </div>
 
@@ -247,17 +189,6 @@ export class ScheduleComponent {
             }
         ];
 
-        // <option *ngFor> doesn't like to cooperate during the initial render
-        this.rooms_filters = this.rooms_filters.map((filter: any) => {
-            return {
-                name: filter.name,
-                type: filter.type,
-                comparator: this.comparators(filter.type)[0],
-                value: filter.value,
-                template: filter.template
-            }
-        });
-
         this.rooms_results = [];
 
 
@@ -339,16 +270,6 @@ export class ScheduleComponent {
             }
         ];
 
-        // <option *ngFor> doesn't like to cooperate during the initial render
-        this.courses_filters = this.courses_filters.map((filter: any) => {
-            return {
-                name: filter.name,
-                type: filter.type,
-                comparator: this.comparators(filter.type)[0],
-                value: filter.value
-            }
-        });
-
         this.courses_results = [];
     }
 
@@ -386,26 +307,6 @@ export class ScheduleComponent {
                 body: error._body
             });
         });
-    }
-
-    orderKeysRoom() {
-        this.rooms_order.keys = [...this.rooms_order.keys.filter((item: any) => {
-            return item.value;
-        }), ...this.rooms_order.keys.filter((item: any) => {
-            return !item.value;
-        })];
-    }
-
-    orderKeysCourses() {
-        this.courses_order.keys = [...this.courses_order.keys.filter((item: any) => {
-            return item.value;
-        }), ...this.courses_order.keys.filter((item: any) => {
-            return !item.value;
-        })];
-    }
-
-    comparators(type: string): string[] {
-        return type === "string" ? [ "IS" ] : type === "number" ? [ "LT", "EQ", "GT" ] : [ "IN", "OUT" ]
     }
 }
 
