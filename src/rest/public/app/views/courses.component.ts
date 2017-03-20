@@ -139,11 +139,6 @@ export class CoursesComponent {
     }
 
     query(): void {
-        this.modalService.create(ModalComponent, {
-            title: "TEST",
-            body: "This is a test"
-        });
-
         let query: any;
         try {
             query = this.queryService.compose(this.filters, this.filterJunction, this.columns, this.order);
