@@ -13,7 +13,7 @@ describe("CoursesSpec", () => {
         return insightFacade.addDataset('courses', content);
     });
 
-    it('should be able to sort on multiple keys in reverse order', () => {
+    it('should be able to sort on multiple keys in reverse rooms_order', () => {
         return insightFacade.performQuery({
             "WHERE": {
                 "AND": [
@@ -5307,7 +5307,7 @@ describe("CoursesSpec", () => {
         });
     });
 
-    it('should return the correct result for new sorted by results', () => {
+    it('should return the correct result for new sorted by rooms_results', () => {
         return insightFacade.performQuery({
             "WHERE":{
                 "GT":{

@@ -9,6 +9,8 @@ import Log from "../Util";
 import InsightFacade from "../controller/InsightFacade";
 import {InsightResponse} from "../controller/IInsightFacade";
 
+import * as fs from 'fs';
+
 /**
  * This configures the REST endpoints for the server.
  */
@@ -22,6 +24,14 @@ export default class Server {
         Log.info("Server::<init>( " + port + " )");
         this.port = port;
         this.inface = new InsightFacade();
+    }
+
+    public register() {
+        const courses = fs.readFileSync(__dirname + '/../../test/courses.zip').toString('base64');
+        this.inface.addDataset('courses', courses);
+
+        const rooms = fs.readFileSync(__dirname + '/../../test/rooms.zip').toString('base64');
+        this.inface.addDataset('rooms', rooms);
     }
 
     /**
@@ -55,11 +65,6 @@ export default class Server {
 
             this.rest.use(restify.bodyParser({mapParams: true, mapFiles: true}));
 
-            this.rest.get('/', (req, res, next) => {
-                res.send(405);
-                return next();
-            });
-
             this.rest.put('/dataset/:id', (req, res, next) => {
                 let dataStr = new Buffer(req.params.body).toString('base64');
                 let id = req.params.id;
@@ -90,6 +95,16 @@ export default class Server {
                 });
                 return next();
             });
+
+            this.rest.get(/^[^.]+$/, restify.serveStatic({
+                directory: __dirname + '/public',
+                file: 'index.html'
+            }));
+
+            this.rest.get(/\/.*/, restify.serveStatic({
+                directory: __dirname + '/public',
+                default: 'index.html'
+            }));
 
             this.rest.listen(this.port, () => {
                 Log.info('Restify listening: ' + this.rest.url);

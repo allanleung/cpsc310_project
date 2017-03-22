@@ -82,7 +82,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail if no order keys are provided', () => {
+    it('should fail if no rooms_order keys are provided', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -219,7 +219,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should allow a D3 style order', ()=> {
+    it('should allow a D3 style rooms_order', ()=> {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -444,7 +444,7 @@ describe('QueryParser.parseQuery', () => {
         ), 'courses'))
     });
 
-    it('should fail when an order key is not in columns', () => {
+    it('should fail when an rooms_order key is not in columns', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -701,7 +701,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail with an order not found in COLUMNS', () => {
+    it('should fail with an rooms_order not found in COLUMNS', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
                 IS: {
@@ -718,7 +718,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail when given a bad key in order', () => {
+    it('should fail when given a bad key in rooms_order', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
                 IS: {

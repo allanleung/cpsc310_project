@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "experimentalDecorators": true,
     "module": "commonjs",
     "target": "ES5",
     "noImplicitAny": true,
@@ -12,6 +13,7 @@
     "/test/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/rest/public/**"
   ]
 }

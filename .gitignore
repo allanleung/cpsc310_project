@@ -1,10 +1,12 @@
 src/**/*.js
 src/**/*.map
+!src/rest/public/systemjs.config.js
 test/*.js
 test/*.map
 npm-debug.log
 mochawesome-reports/
 node_modules/
+src/rest/public/node_modules/
 .idea/
 .yarnclean
 coverage/
