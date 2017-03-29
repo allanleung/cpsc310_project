@@ -38,8 +38,7 @@ import { GeoPoint } from "../models/GeoPoint";
     <button type="button" class="btn btn-primary" (click)="query()">Query</button>
 </div>
 
-<query-results [columns]="rooms_columns" [results]="rooms_results"></query-results>
-<query-results [columns]="courses_columns" [results]="courses_results"></query-results>
+<scheduling [sections]="courses_results" [rooms]="rooms_results"></scheduling>
 `
 })
 export class ScheduleComponent {
@@ -264,6 +263,12 @@ export class ScheduleComponent {
             },
             {
                 name: "courses_id",
+                type: "string",
+                comparator: "",
+                value: ""
+            },
+            {
+                name: "courses_year",
                 type: "number",
                 comparator: "",
                 value: ""
