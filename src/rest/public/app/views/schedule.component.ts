@@ -437,6 +437,9 @@ export class ScheduleComponent {
                             break;
                         }
                     }
+
+                    if (blocks_left === 0)
+                        break;
                 }
 
                 if (blocks_left === 0) {
@@ -448,7 +451,7 @@ export class ScheduleComponent {
             failed_blocks += blocks_left;
         }
 
-        this.quality = 1 - failed_blocks / total_blocks;
+        this.quality = 1 - (failed_blocks / total_blocks);
     }
 }
 
