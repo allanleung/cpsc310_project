@@ -26,12 +26,12 @@ export default class Server {
         this.inface = new InsightFacade();
     }
 
-    public register() {
+    public register(): Promise<InsightResponse> {
         const courses = fs.readFileSync(__dirname + '/../../test/courses.zip').toString('base64');
-        this.inface.addDataset('courses', courses);
-
         const rooms = fs.readFileSync(__dirname + '/../../test/rooms.zip').toString('base64');
-        this.inface.addDataset('rooms', rooms);
+
+        return this.inface.addDataset('courses', courses)
+            .then(() => this.inface.addDataset('rooms', rooms))
     }
 
     /**
@@ -103,7 +103,7 @@ export default class Server {
 
             this.rest.get(/\/.*/, restify.serveStatic({
                 directory: __dirname + '/public',
-                default: 'index.html'
+                'default': 'index.html'
             }));
 
             this.rest.listen(this.port, () => {

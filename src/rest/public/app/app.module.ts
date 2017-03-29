@@ -9,7 +9,6 @@ import { ResultComponent } from './view_components/result.component';
 import { ColumnSelectorComponent } from './view_components/column_selector.component';
 import { OrderSelectorComponent } from './view_components/order_selector.component';
 import { FilterSelectorComponent } from "./view_components/filter_selector.component";
-import { SchedulingComponent } from "./view_components/scheduling.component";
 
 import { CoursesComponent } from './views/courses.component';
 import { RoomsComponent } from './views/rooms.component';
@@ -37,7 +36,6 @@ import { ModalPlaceholderComponent } from "./modal/modal-placeholder.component";
         ColumnSelectorComponent,
         OrderSelectorComponent,
         FilterSelectorComponent,
-        SchedulingComponent,
 
         CoursesComponent,
         RoomsComponent,

@@ -5,6 +5,8 @@ import { ModalService } from "../modal/modal.service";
 import { ModalComponent } from "../modal/modal.component";
 import { GeoPoint } from "../models/GeoPoint";
 
+const SCHEDULING_BLOCKS = 15;
+
 @Component({
     selector: 'schedule',
     template: `
@@ -38,7 +40,23 @@ import { GeoPoint } from "../models/GeoPoint";
     <button type="button" class="btn btn-primary" (click)="query()">Query</button>
 </div>
 
-<scheduling [sections]="courses_results" [rooms]="rooms_results"></scheduling>
+<div class="row">
+    <h3>Schedule quality: {{quality}}</h3>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Room</th>
+                <th>Blocks</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let room of schedules.keys();">
+                <td>{{ room.rooms_name }}</td>
+                <td>{{ getRoomBlocks(room) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 `
 })
 export class ScheduleComponent {
@@ -46,13 +64,14 @@ export class ScheduleComponent {
     rooms_order: any;
     rooms_filterJunction: string;
     rooms_filters: any[];
-    rooms_results: any[];
 
     courses_columns: any;
     courses_order: any;
     courses_filterJunction: string;
     courses_filters: any[];
-    courses_results: any[];
+
+    schedules = new Map<any, Map<number, string>>();
+    quality = 0;
 
     constructor (private queryService: QueryService, private modalService: ModalService) {
         this.rooms_columns = [
@@ -188,9 +207,6 @@ export class ScheduleComponent {
             }
         ];
 
-        this.rooms_results = [];
-
-
         this.courses_order = {
             dir: "UP",
             keys: [
@@ -266,24 +282,30 @@ export class ScheduleComponent {
                 type: "string",
                 comparator: "",
                 value: ""
-            },
-            {
-                name: "courses_year",
-                type: "number",
-                comparator: "",
-                value: ""
             }
         ];
+    }
 
-        this.courses_results = [];
+    getRoomBlocks(room: any): number[] {
+        return [...this.schedules.get(room).keys()];
     }
 
     query(): void {
         let rooms_query: any;
         let courses_query: any;
+        const courses_filters_with_year = [
+            ...this.courses_filters,
+            {
+                name: "courses_year",
+                type: "number",
+                comparator: "EQ",
+                value: 2014
+            }
+        ];
+
         try {
             rooms_query = this.queryService.compose(this.rooms_filters, this.rooms_filterJunction, this.rooms_columns, this.rooms_order);
-            courses_query = this.queryService.compose(this.courses_filters, this.courses_filterJunction, this.courses_columns, this.courses_order);
+            courses_query = this.queryService.compose(courses_filters_with_year, this.courses_filterJunction, this.courses_columns, this.courses_order);
         } catch(error) {
             this.modalService.create(ModalComponent, {
                 title: "Query Error",
@@ -297,14 +319,16 @@ export class ScheduleComponent {
             this.queryService.search(rooms_query),
             this.queryService.search(courses_query)
         ]).then(results => {
-            this.rooms_results = results[0].result;
-            this.courses_results = results[1].result;
+            const rooms_results = results[0].result;
+            const courses_results = results[1].result;
 
-            if (this.rooms_results.length === 0 || this.courses_results.length === 0) {
+            if (rooms_results.length === 0 || courses_results.length === 0) {
                 this.modalService.create(ModalComponent, {
                     title: "Query Error",
                     body: "No results found"
                 });
+            } else {
+                this.scheduleCourses(courses_results, rooms_results);
             }
         }).catch(error => {
             this.modalService.create(ModalComponent, {
@@ -312,6 +336,119 @@ export class ScheduleComponent {
                 body: error._body
             });
         });
+    }
+
+    scheduleCourses(sections: any[], rooms: any[]) {
+        // 15 (9 + 6) possible scheduling blocks for courses
+        // we need
+        // - a set of courses, constructed from courses_id + courses_dept
+        //   size is the pass + fail in largest section that's not in 1900
+        //   number of blocks to schedule for the course is the number of sections in 2014 / 3 rounded up
+        // - mapping of rooms to their schedules
+
+        // we need to keep around
+        // - a set of schedule blocks for each room
+        // - a set of schedule blocks for each courses_id + courses_dept
+        // - a list of scheduled courses
+        // Create a mapping from seat count to rooms
+        // For each section, ascent the seat count mapping from the closest match up
+        //   for each room that's big enough, go through the available scheduling blocks
+        //     if the scheduling block is available for the courses_id + courses_dept,
+        //       select this scheduling block, update everything above and add the course to the scheduled courses
+
+        // rooms to their schedule of blocks to sections
+        this.schedules.clear();
+
+        // seats to list of rooms
+        const capacities = new Map<number, any[]>();
+
+        // courses_dept + " " + courses_id to number of seats and blocks needed
+        const courses = new Map<string, {seats: number, section_count: number}>();
+
+        // first create the mapping of seat count to room list
+        for (let room of rooms) {
+            const seats: number = room.rooms_seats;
+
+            if (!capacities.has(seats)) {
+                capacities.set(seats, [])
+            }
+
+            capacities.get(seats).push(room)
+        }
+
+        // get a list of available seating options
+        const seating_options = [...capacities.keys()].sort((a, b) => a - b);
+
+        for (let section of sections) {
+            if (section.courses_year === 1900) {
+                continue;
+            }
+
+            const course_key = section.courses_dept + " " + section.courses_id;
+
+            if (!courses.has(course_key)) {
+                courses.set(course_key, {seats: 0, section_count: 0});
+            }
+
+            const course = courses.get(course_key);
+            if (section.courses_year === 2014) {
+                course.section_count++;
+            }
+
+            course.seats = Math.max(course.seats, section.courses_pass + section.courses_fail);
+        }
+
+        let total_blocks = 0;
+        let failed_blocks = 0;
+
+        for (let course_key of courses.keys()) {
+            const course = courses.get(course_key);
+            const conflicts = new Set<number>();
+            let blocks_left = Math.ceil(course.section_count / 3);
+            total_blocks += blocks_left;
+
+            for (let option of seating_options) {
+                if (option < course.seats) {
+                    continue;
+                }
+
+                for (let room of capacities.get(option)) {
+                    if (!this.schedules.has(room)) {
+                        this.schedules.set(room, new Map());
+                    }
+
+                    const schedule = this.schedules.get(room);
+
+                    for (let block = 0; block < SCHEDULING_BLOCKS; block++) {
+                        if (schedule.has(block)) {
+                            continue;
+                        }
+
+                        if (conflicts.has(block)) {
+                            continue;
+                        }
+
+                        // we've found a block that works!
+                        schedule.set(block, course_key);
+                        conflicts.add(block);
+                        blocks_left--;
+
+                        if (blocks_left === 0) {
+                            break;
+                        }
+                    }
+                }
+
+                if (blocks_left === 0) {
+                    // done!
+                    break;
+                }
+            }
+
+            failed_blocks += blocks_left;
+        }
+
+        this.quality = 1 - failed_blocks / total_blocks;
     }
 }
 

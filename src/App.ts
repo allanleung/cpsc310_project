@@ -12,12 +12,12 @@ export class App {
         Log.info('App::initServer( ' + port + ' ) - start');
 
         let s = new Server(port);
-        s.register();
-        s.start().then(function (val: boolean) {
-            Log.info("App::initServer() - started: " + val);
-        }).catch(function (err: Error) {
-            Log.error("App::initServer() - ERROR: " + err.message);
-        });
+        s.register().then(() => s.start())
+            .then(function (val: boolean) {
+                Log.info("App::initServer() - started: " + val);
+            }, function (err: Error) {
+                Log.error("App::initServer() - ERROR: " + err.message);
+            });
     }
 }
 
