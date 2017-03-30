@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
     selector: 'order-selector',
@@ -17,9 +17,22 @@ import { Component, Input } from '@angular/core';
 </ol>
 `
 })
-export class OrderSelectorComponent {
+export class OrderSelectorComponent extends OnInit {
     @Input()
     order: any;
+
+    ngOnInit(): void {
+        // Make sure keys are actually ordered.
+        this.orderKeys();
+    }
+    
+    orderKeys() {
+        this.order.keys = [...this.order.keys.filter((item: any) => {
+            return item.value;
+        }), ...this.order.keys.filter((item: any) => {
+            return !item.value;
+        })];
+    }
 }
 
 

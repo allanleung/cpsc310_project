@@ -157,7 +157,7 @@ export class ScheduleComponent {
                 value: "",
                 template: (self: any) => {
                     if (self.value.split(',').length !== 3) {
-                        throw "Invalid query";
+                        throw "Invalid data format for " + self.name;
                     }
 
                     let lat: number = parseFloat(self.value.split(',')[0]);
@@ -165,7 +165,7 @@ export class ScheduleComponent {
                     let dist: number = parseFloat(self.value.split(',')[2])/1000;
 
                     if (isNaN(lat) || isNaN(lon) || isNaN(dist)) {
-                        throw "Invalid query";
+                        throw "Invalid data type for " + self.name;
                     }
 
                     let point = new GeoPoint(lat, lon, false);
@@ -309,7 +309,7 @@ export class ScheduleComponent {
         } catch(error) {
             this.modalService.create(ModalComponent, {
                 title: "Query Error",
-                body: "Invalid data format, query could not be composed"
+                body: error
             });
 
             return;

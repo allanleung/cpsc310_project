@@ -21,6 +21,10 @@ export class QueryService {
 
                 if (filter.type === "number") {
                     value = parseFloat(filter.value);
+
+                    if (isNaN(value)) {
+                        throw "Invalid data type for " + filter.name;
+                    }
                 }
 
                 if (filter.template) {
