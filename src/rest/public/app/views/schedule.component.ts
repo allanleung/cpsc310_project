@@ -405,9 +405,7 @@ export class ScheduleComponent {
 
         let sectionsCount = 0;
         let scheduledCount = 0;
-
-        console.log(courses);
-
+        
         for (let course_key of [...courses.keys()].sort((a, b) => {
             return courses.get(b).seats - courses.get(a).seats;
         })) {
@@ -469,7 +467,7 @@ export class ScheduleComponent {
         }
 
         // this.quality = 1 - (failed_blocks / total_blocks);
-        this.quality = 1 - (scheduledCount / sectionsCount);
+        this.quality = (scheduledCount / sectionsCount);
     }
 }
 
