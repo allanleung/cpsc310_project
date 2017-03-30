@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 
 import { QueryService } from '../query.service';
 import { ModalService } from "../modal/modal.service";
@@ -50,9 +50,9 @@ const SCHEDULING_BLOCKS = 15;
             </tr>
         </thead>
         <tbody>
-            <tr *ngFor="let room of schedules.keys();">
+            <tr *ngFor="let room of getScheduleRooms();">
                 <td>{{ room.rooms_name }}</td>
-                <td>{{ getRoomBlocks(room) }}</td>
+                <td><timetable [schedule]="schedules.get(room)"></timetable></td>
             </tr>
         </tbody>
     </table>
@@ -71,6 +71,7 @@ export class ScheduleComponent {
     courses_filters: any[];
 
     schedules = new Map<any, Map<number, string>>();
+
     quality = 0;
 
     constructor (private queryService: QueryService, private modalService: ModalService) {
@@ -288,6 +289,10 @@ export class ScheduleComponent {
 
     getRoomBlocks(room: any): number[] {
         return [...this.schedules.get(room).keys()];
+    }
+
+    getScheduleRooms(): any[] {
+        return [...this.schedules.keys()];
     }
 
     query(): void {
