@@ -14,6 +14,9 @@ import { CoursesComponent } from './views/courses.component';
 import { RoomsComponent } from './views/rooms.component';
 import { ScheduleComponent } from './views/schedule.component';
 
+import { CoursesPaneComponent } from './views/courses_pane.component';
+import { SectionPaneComponent } from './views/section_pane.component';
+
 import { QueryService } from "./query.service";
 
 import { RoutingModule }    from './routing.module';
@@ -36,6 +39,9 @@ import { ModalPlaceholderComponent } from "./modal/modal-placeholder.component";
         ColumnSelectorComponent,
         OrderSelectorComponent,
         FilterSelectorComponent,
+
+        CoursesPaneComponent,
+        SectionPaneComponent,
 
         CoursesComponent,
         RoomsComponent,

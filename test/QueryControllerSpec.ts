@@ -64,7 +64,7 @@ describe("QueryController.executeQuery", () => {
         queryController = null;
     });
 
-    it('should correctly rooms_order things ascending with a tie breaker', () => {
+    it('should correctly order things ascending with a tie breaker', () => {
         return expect(queryController.executeQuery(new Query(
             {},
             {
