@@ -82,7 +82,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail if no courses_order keys are provided', () => {
+    it('should fail if no order keys are provided', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -701,7 +701,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail with an courses_order not found in COLUMNS', () => {
+    it('should fail with an order not found in COLUMNS', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
                 IS: {
@@ -718,7 +718,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail when given a bad key in courses_order', () => {
+    it('should fail when given a bad key in order', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
                 IS: {
