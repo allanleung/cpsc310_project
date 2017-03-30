@@ -13,24 +13,24 @@ const SCHEDULING_BLOCKS = 15;
 <div class="row">
     <!-- Rooms -->
 
-    <div class="col-md-3">
-        <h3>Rooms Order By</h3>
-        <order-selector [order]="rooms_order"></order-selector>
-    </div>
+    <!--<div class="col-md-3">-->
+        <!--<h3>Rooms Order By</h3>-->
+        <!--<order-selector [order]="rooms_order"></order-selector>-->
+    <!--</div>-->
 
-    <div class="col-md-3">
+    <div class="col-md-6">
         <h3>Rooms Filters</h3>
         <filter-selector [filterJunction]="rooms_filterJunction" [filters]="rooms_filters"></filter-selector>
     </div>
     
     <!-- Courses -->
     
-    <div class="col-md-3">
-        <h3>Courses Order By</h3>
-        <order-selector [order]="courses_order"></order-selector>
-    </div>
+    <!--<div class="col-md-3">-->
+        <!--<h3>Courses Order By</h3>-->
+        <!--<order-selector [order]="courses_order"></order-selector>-->
+    <!--</div>-->
 
-    <div class="col-md-3">
+    <div class="col-md-6">
         <h3>Courses Filters</h3>
         <filter-selector [filterJunction]="courses_filterJunction" [filters]="courses_filters"></filter-selector>
     </div>
@@ -403,6 +403,11 @@ export class ScheduleComponent {
         let total_blocks = 0;
         let failed_blocks = 0;
 
+        let sectionsCount = 0;
+        let scheduledCount = 0;
+
+        console.log(courses);
+
         for (let course_key of [...courses.keys()].sort((a, b) => {
             return courses.get(b).seats - courses.get(a).seats;
         })) {
@@ -439,6 +444,7 @@ export class ScheduleComponent {
                         schedule.set(block, course);
                         conflicts.add(block);
                         blocks_left--;
+                        scheduledCount++;
 
                         if (blocks_left === 0) {
                             break;
@@ -455,10 +461,15 @@ export class ScheduleComponent {
                 }
             }
 
-            failed_blocks += blocks_left;
+            // failed_blocks += blocks_left;
         }
 
-        this.quality = 1 - (failed_blocks / total_blocks);
+        for (let course_key of courses.keys()) {
+            sectionsCount += Math.ceil(courses.get(course_key).section_count / 3);
+        }
+
+        // this.quality = 1 - (failed_blocks / total_blocks);
+        this.quality = 1 - (scheduledCount / sectionsCount);
     }
 }
 
