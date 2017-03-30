@@ -304,19 +304,10 @@ export class ScheduleComponent {
     query(): void {
         let rooms_query: any;
         let courses_query: any;
-        const courses_filters_with_year = [
-            ...this.courses_filters,
-            {
-                name: "courses_year",
-                type: "number",
-                comparator: "EQ",
-                value: 2014
-            }
-        ];
 
         try {
             rooms_query = this.queryService.compose(this.rooms_filters, this.rooms_filterJunction, this.rooms_columns, this.rooms_order);
-            courses_query = this.queryService.compose(courses_filters_with_year, this.courses_filterJunction, this.courses_columns, this.courses_order);
+            courses_query = this.queryService.compose(this.courses_filters, this.courses_filterJunction, this.courses_columns, this.courses_order);
         } catch(error) {
             this.modalService.create(ModalComponent, {
                 title: "Query Error",
@@ -414,6 +405,9 @@ export class ScheduleComponent {
 
         for (let course_key of courses.keys()) {
             const course = courses.get(course_key);
+            // skip courses without any sections
+            if (course.section_count === 0) continue;
+
             const conflicts = new Set<number>();
             let blocks_left = Math.ceil(course.section_count / 3);
             total_blocks += blocks_left;
