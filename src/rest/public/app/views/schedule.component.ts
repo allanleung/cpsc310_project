@@ -403,7 +403,9 @@ export class ScheduleComponent {
         let total_blocks = 0;
         let failed_blocks = 0;
 
-        for (let course_key of courses.keys()) {
+        for (let course_key of [...courses.keys()].sort((a, b) => {
+            return courses.get(b).seats - courses.get(a).seats;
+        })) {
             const course = courses.get(course_key);
             // skip courses without any sections
             if (course.section_count === 0) continue;
