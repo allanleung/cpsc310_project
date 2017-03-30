@@ -22,6 +22,7 @@ import { QueryService } from "./query.service";
 import { RoutingModule }    from './routing.module';
 import { ModalService} from "./modal/modal.service";
 import { ModalPlaceholderComponent } from "./modal/modal-placeholder.component";
+import {TimetableComponent} from "./view_components/timetable.component";
 
 @NgModule({
     imports:      [
@@ -39,6 +40,7 @@ import { ModalPlaceholderComponent } from "./modal/modal-placeholder.component";
         ColumnSelectorComponent,
         OrderSelectorComponent,
         FilterSelectorComponent,
+        TimetableComponent,
 
         CoursesPaneComponent,
         SectionPaneComponent,

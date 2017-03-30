@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 
 import { QueryService } from '../query.service';
 import { ModalService } from "../modal/modal.service";
@@ -41,18 +41,20 @@ const SCHEDULING_BLOCKS = 15;
 </div>
 
 <div class="row">
-    <h3>Schedule quality: {{quality}}</h3>
+    <h3>Schedule quality: {{describeScheduleQuality()}}</h3>
     <table class="table table-hover">
         <thead>
             <tr>
                 <th>Room</th>
+                <th>Seats</th>
                 <th>Blocks</th>
             </tr>
         </thead>
         <tbody>
-            <tr *ngFor="let room of schedules.keys();">
+            <tr *ngFor="let room of getScheduleRooms();">
                 <td>{{ room.rooms_name }}</td>
-                <td>{{ getRoomBlocks(room) }}</td>
+                <td>{{ room.rooms_seats }}</td>
+                <td><timetable [schedule]="schedules.get(room)"></timetable></td>
             </tr>
         </tbody>
     </table>
@@ -70,7 +72,8 @@ export class ScheduleComponent {
     courses_filterJunction: string;
     courses_filters: any[];
 
-    schedules = new Map<any, Map<number, string>>();
+    schedules = new Map<any, Map<number, any>>();
+
     quality = 0;
 
     constructor (private queryService: QueryService, private modalService: ModalService) {
@@ -290,6 +293,14 @@ export class ScheduleComponent {
         return [...this.schedules.get(room).keys()];
     }
 
+    getScheduleRooms(): any[] {
+        return [...this.schedules.keys()];
+    }
+
+    describeScheduleQuality(): string {
+        return "" + Math.round(100 * this.quality) + "%";
+    }
+
     query(): void {
         let rooms_query: any;
         let courses_query: any;
@@ -363,7 +374,7 @@ export class ScheduleComponent {
         const capacities = new Map<number, any[]>();
 
         // courses_dept + " " + courses_id to number of seats and blocks needed
-        const courses = new Map<string, {seats: number, section_count: number}>();
+        const courses = new Map<string, {seats: number, section_count: number, name: string}>();
 
         // first create the mapping of seat count to room list
         for (let room of rooms) {
@@ -387,7 +398,7 @@ export class ScheduleComponent {
             const course_key = section.courses_dept + " " + section.courses_id;
 
             if (!courses.has(course_key)) {
-                courses.set(course_key, {seats: 0, section_count: 0});
+                courses.set(course_key, {seats: 0, section_count: 0, name: course_key});
             }
 
             const course = courses.get(course_key);
@@ -429,7 +440,7 @@ export class ScheduleComponent {
                         }
 
                         // we've found a block that works!
-                        schedule.set(block, course_key);
+                        schedule.set(block, course);
                         conflicts.add(block);
                         blocks_left--;
 
