@@ -60,7 +60,7 @@ export class CoursesComponent {
         this.columns = [
             {
                 name: "courses_dept",
-                value: false
+                value: true
             },
             {
                 name: "courses_id",
@@ -142,10 +142,15 @@ export class CoursesComponent {
         let query: any;
         try {
             query = this.queryService.compose(this.filters, this.filterJunction, this.columns, this.order);
+
+            // query.TRANSFORMATIONS = {
+            //     "GROUP": ["courses_dept", "courses_id"],
+            //     "APPLY": []
+            // };
         } catch(error) {
             this.modalService.create(ModalComponent, {
                 title: "Query Error",
-                body: "Invalid data format, query could not be composed"
+                body: error
             });
 
             return;
