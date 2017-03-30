@@ -298,7 +298,7 @@ export class ScheduleComponent {
             if (this.rooms_results.length === 0 || this.courses_results.length === 0) {
                 this.modalService.create(ModalComponent, {
                     title: "Query Error",
-                    body: "No results found"
+                    body: "No courses_results found"
                 });
             }
         }).catch(error => {

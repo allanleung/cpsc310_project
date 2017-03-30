@@ -82,7 +82,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail if no rooms_order keys are provided', () => {
+    it('should fail if no courses_order keys are provided', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -209,7 +209,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail on an empty list of columns', () => {
+    it('should fail on an empty list of courses_columns', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -219,7 +219,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should allow a D3 style rooms_order', ()=> {
+    it('should allow a D3 style courses_order', ()=> {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -266,7 +266,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail if GROUPS is present and columns are not all in GROUPS or APPLY', () => {
+    it('should fail if GROUPS is present and courses_columns are not all in GROUPS or APPLY', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -444,7 +444,7 @@ describe('QueryParser.parseQuery', () => {
         ), 'courses'))
     });
 
-    it('should fail when an rooms_order key is not in columns', () => {
+    it('should fail when an courses_order key is not in courses_columns', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -701,7 +701,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail with an rooms_order not found in COLUMNS', () => {
+    it('should fail with an courses_order not found in COLUMNS', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
                 IS: {
@@ -718,7 +718,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail when given a bad key in rooms_order', () => {
+    it('should fail when given a bad key in courses_order', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {
                 IS: {
@@ -1070,7 +1070,7 @@ describe('QueryParser.parseQuery', () => {
         )).to.be.null
     });
 
-    it('should fail on malformed columns', () => {
+    it('should fail on malformed courses_columns', () => {
         return expect(QueryParser.parseQuery({
                 WHERE: {},
                 OPTIONS: {
@@ -1086,7 +1086,7 @@ describe('QueryParser.parseQuery', () => {
         )).to.be.null
     });
 
-    it('should fail if columns include non-courses ids', () => {
+    it('should fail if courses_columns include non-courses ids', () => {
         return expect(QueryParser.parseQuery({
                 WHERE: {
                     "IS": {

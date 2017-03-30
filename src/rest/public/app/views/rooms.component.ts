@@ -217,7 +217,7 @@ export class RoomsComponent {
                 if (this.results.length === 0) {
                     this.modalService.create(ModalComponent, {
                         title: "Query Error",
-                        body: "No results found"
+                        body: "No courses_results found"
                     });
                 }
             })
