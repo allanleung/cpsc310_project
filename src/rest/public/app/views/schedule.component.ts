@@ -403,9 +403,6 @@ export class ScheduleComponent {
         let total_blocks = 0;
         let failed_blocks = 0;
 
-        let sectionsCount = 0;
-        let scheduledCount = 0;
-        
         for (let course_key of [...courses.keys()].sort((a, b) => {
             return courses.get(b).seats - courses.get(a).seats;
         })) {
@@ -442,7 +439,6 @@ export class ScheduleComponent {
                         schedule.set(block, course);
                         conflicts.add(block);
                         blocks_left--;
-                        scheduledCount++;
 
                         if (blocks_left === 0) {
                             break;
@@ -459,15 +455,10 @@ export class ScheduleComponent {
                 }
             }
 
-            // failed_blocks += blocks_left;
+            failed_blocks += blocks_left;
         }
 
-        for (let course_key of courses.keys()) {
-            sectionsCount += Math.ceil(courses.get(course_key).section_count / 3);
-        }
-
-        // this.quality = 1 - (failed_blocks / total_blocks);
-        this.quality = (scheduledCount / sectionsCount);
+        this.quality = 1 - (failed_blocks / total_blocks);
     }
 }
 
