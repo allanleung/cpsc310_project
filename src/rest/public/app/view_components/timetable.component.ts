@@ -12,19 +12,21 @@ import {Component, Input} from "@angular/core";
         <tr>
             <th>Block</th>
             <th>Course</th>
+            <th>Seats</th>
         </tr>
     </thead>
     <tbody>
         <tr *ngFor="let block of getScheduleBlocks();">
             <td>{{ describeScheduleBlock(block) }}</td>
-            <td>{{ schedule.get(block) }}</td>
+            <td>{{ schedule.get(block).name }}</td>
+            <td>{{ schedule.get(block).seats }}</td>
         </tr>
     </tbody>
 </table>`
 })
 export class TimetableComponent {
     @Input()
-    schedule: Map<number, string>;
+    schedule: Map<number, any>;
 
     getScheduleBlocks(): number[] {
         return [...this.schedule.keys()];
