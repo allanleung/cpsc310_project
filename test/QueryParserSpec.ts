@@ -209,7 +209,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail on an empty list of courses_columns', () => {
+    it('should fail on an empty list of columns', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -219,7 +219,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should allow a D3 style courses_order', ()=> {
+    it('should allow a D3 style order', ()=> {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -266,7 +266,7 @@ describe('QueryParser.parseQuery', () => {
         })).to.be.null
     });
 
-    it('should fail if GROUPS is present and courses_columns are not all in GROUPS or APPLY', () => {
+    it('should fail if GROUPS is present and columns are not all in GROUPS or APPLY', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -444,7 +444,7 @@ describe('QueryParser.parseQuery', () => {
         ), 'courses'))
     });
 
-    it('should fail when an courses_order key is not in courses_columns', () => {
+    it('should fail when an order key is not in columns', () => {
         return expect(QueryParser.parseQuery({
             WHERE: {},
             OPTIONS: {
@@ -1070,7 +1070,7 @@ describe('QueryParser.parseQuery', () => {
         )).to.be.null
     });
 
-    it('should fail on malformed courses_columns', () => {
+    it('should fail on malformed columns', () => {
         return expect(QueryParser.parseQuery({
                 WHERE: {},
                 OPTIONS: {
@@ -1086,7 +1086,7 @@ describe('QueryParser.parseQuery', () => {
         )).to.be.null
     });
 
-    it('should fail if courses_columns include non-courses ids', () => {
+    it('should fail if columns include non-courses ids', () => {
         return expect(QueryParser.parseQuery({
                 WHERE: {
                     "IS": {
