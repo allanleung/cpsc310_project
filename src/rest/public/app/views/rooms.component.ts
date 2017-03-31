@@ -26,7 +26,13 @@ import { GeoPoint } from "../models/GeoPoint";
 </div>
 
 <div class="row">
-    <button type="button" class="btn btn-primary" (click)="query()">Query</button>
+    <button type="button" class="btn btn-primary btn-lg btn-block" (click)="query()">Query</button>
+</div>
+
+<hr>
+
+<div [hidden]="!showMap()" class="row">
+    <rooms-map [rooms]="results"></rooms-map>
 </div>
 
 <query-results [columns]="columns" [results]="results"></query-results>
@@ -38,6 +44,12 @@ export class RoomsComponent {
     filterJunction: string;
     filters: any[];
     results: any[];
+    
+    showMap(): boolean {
+        return this.columns.reduce((show: boolean, column: any) => {
+            return show && ((column.name === 'rooms_lat' || column.name === 'rooms_lon') ? column.value : true);
+        }, true);
+    }
 
     constructor (private queryService: QueryService, private modalService: ModalService) {
         this.order = {

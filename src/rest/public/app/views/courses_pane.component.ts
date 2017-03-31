@@ -25,8 +25,10 @@ import { ModalComponent } from '../modal/modal.component';
 </div>
         
 <div class="row">
-    <button type="button" class="btn btn-primary" (click)="query()">Query</button>
+    <button type="button" class="btn btn-primary btn-lg btn-block" (click)="query()">Query</button>
 </div>
+
+<hr>
         
 <query-results [columns]="columns" [results]="results"></query-results>
 `

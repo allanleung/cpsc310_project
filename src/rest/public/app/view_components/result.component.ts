@@ -2,6 +2,10 @@ import {Component, Input } from '@angular/core';
 
 @Component({
     selector: 'query-results',
+    styles: [
+        'th { font-size: 13px; }',
+        'td { word-break: break-word; }'
+    ],
     template: `
 <div class="row">
     <table class="table table-hover">
@@ -12,7 +16,7 @@ import {Component, Input } from '@angular/core';
         </thead>
         <tbody>
             <tr *ngFor="let result of results;">
-                <th *ngFor="let column of visibleColumns();">{{result[column]}}</th>
+                <td *ngFor="let column of visibleColumns();">{{result[column]}}</td>
             </tr>
         </tbody>
     </table>

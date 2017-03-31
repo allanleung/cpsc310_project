@@ -22,6 +22,7 @@
     "@types/node": "^6.0.52",
     "@types/rx": "^4.1.1",
     "angular-in-memory-web-api": "~0.2.4",
+    "angular2-google-maps": "^0.17.0",
     "core-js": "^2.4.1",
     "geopoint": "^1.0.1",
     "reflect-metadata": "0.1.10",

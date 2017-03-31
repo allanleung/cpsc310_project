@@ -36,7 +36,13 @@ export class FilterSelectorComponent extends OnInit {
     }
 
     comparators(type: string): string[] {
-        return type === "string" ? [ "IS" ] : [ "LT", "EQ", "GT" ]
+        if (type === "string") {
+            return [ "IS" ]
+        } else if (type === "location") {
+            return [ "IN", "OUT" ]
+        }
+
+        return [ "LT", "EQ", "GT" ];
     }
 }
 

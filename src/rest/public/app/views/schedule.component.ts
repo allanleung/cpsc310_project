@@ -37,10 +37,14 @@ const SCHEDULING_BLOCKS = 15;
 </div>
 
 <div class="row">
-    <button type="button" class="btn btn-primary" (click)="query()">Query</button>
+    <button type="button" class="btn btn-primary btn-lg btn-block" (click)="query()">Query</button>
 </div>
 
+<hr>
+
 <div class="row">
+    <rooms-map [rooms]="getScheduleRooms()"></rooms-map>
+
     <h3>Schedule quality: {{describeScheduleQuality()}}</h3>
     <table class="table table-hover">
         <thead>
