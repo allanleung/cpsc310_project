@@ -13,24 +13,24 @@ const SCHEDULING_BLOCKS = 15;
 <div class="row">
     <!-- Rooms -->
 
-    <div class="col-md-3">
-        <h3>Rooms Order By</h3>
-        <order-selector [order]="rooms_order"></order-selector>
-    </div>
+    <!--<div class="col-md-3">-->
+        <!--<h3>Rooms Order By</h3>-->
+        <!--<order-selector [order]="rooms_order"></order-selector>-->
+    <!--</div>-->
 
-    <div class="col-md-3">
+    <div class="col-md-6">
         <h3>Rooms Filters</h3>
         <filter-selector [filterJunction]="rooms_filterJunction" [filters]="rooms_filters"></filter-selector>
     </div>
     
     <!-- Courses -->
     
-    <div class="col-md-3">
-        <h3>Courses Order By</h3>
-        <order-selector [order]="courses_order"></order-selector>
-    </div>
+    <!--<div class="col-md-3">-->
+        <!--<h3>Courses Order By</h3>-->
+        <!--<order-selector [order]="courses_order"></order-selector>-->
+    <!--</div>-->
 
-    <div class="col-md-3">
+    <div class="col-md-6">
         <h3>Courses Filters</h3>
         <filter-selector [filterJunction]="courses_filterJunction" [filters]="courses_filters"></filter-selector>
     </div>
@@ -403,7 +403,9 @@ export class ScheduleComponent {
         let total_blocks = 0;
         let failed_blocks = 0;
 
-        for (let course_key of courses.keys()) {
+        for (let course_key of [...courses.keys()].sort((a, b) => {
+            return courses.get(b).seats - courses.get(a).seats;
+        })) {
             const course = courses.get(course_key);
             // skip courses without any sections
             if (course.section_count === 0) continue;
